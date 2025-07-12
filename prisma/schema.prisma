@@ -1,0 +1,84 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserType {
+  ORGANIZATION
+  RESTAURANT
+  INDIVIDUAL_DONOR
+}
+
+enum Status{
+  PENDING 
+  COMPLETE
+}
+
+
+model User {
+  userId    Int       @id @default(autoincrement())
+  type      UserType
+  email     String    @unique
+  password  String
+  address   String
+  country   String
+  city      String
+  createdAt DateTime  @default(now())
+  primary_PhoneN String 
+  secondary_PhoneN String
+
+  // Specializations (1:1) 
+  organization     Organization?
+  restaurant       Restaurant?
+  individualDonor  IndividualDonor?
+}
+model Organization {
+  userId    Int    @id
+  orgName   String
+  regNumber Int?    @unique //optional
+  description String? //optional
+  type      String //NGO,NPO,ETC
+  user      User   @relation(fields: [userId], references: [userId])
+}
+
+model Restaurant {
+  userId    Int    @id
+  ResName      String
+  openTime String
+  closeTime String
+  description String?
+  user      User   @relation(fields: [userId], references: [userId])
+}
+
+model IndividualDonor {
+  userId   Int    @id
+  fullName String
+  cnic     String? @unique
+  user     User   @relation(fields: [userId], references: [userId])
+}
+
+model FoodListing{
+  foodId Int @id @default(autoincrement())
+  userId Int @unique
+  orgName String
+  title String
+  quantity Int 
+  deadline DateTime
+  status  Status 
+
+  
+
+   
+}
+
