@@ -16,8 +16,18 @@ export function removeToken() {
 export function decodeToken(token) {
   if (!token) return null;
   try {
-    const payload = token.split('.')[1];
-    return JSON.parse(atob(payload));
+    // Handle both real JWT and mock JWT formats
+    const parts = token.split('.');
+    if (parts.length === 3) {
+      // Real JWT format
+      const payload = parts[1];
+      return JSON.parse(atob(payload));
+    } else if (parts.length === 2) {
+      // Mock JWT format (fallback)
+      const payload = parts[1];
+      return JSON.parse(atob(payload));
+    }
+    return null;
   } catch (e) {
     return null;
   }

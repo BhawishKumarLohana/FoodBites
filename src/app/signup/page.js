@@ -262,34 +262,53 @@ export default function SignupPage() {
   // Step 5: Review & submit
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Mock API call: returns a fake JWT with role
-    if (email && password && userType) {
-      const fakePayload = {
+    setError("");
+    
+    try {
+      const signupData = {
         email,
-        role: userType, // changed from userType to role
+        password,
         address,
         country,
         city,
-        primaryPhone,
-        secondaryPhone,
+        primary_PhoneN: primaryPhone,
+        secondary_PhoneN: secondaryPhone,
+        userType,
+        // Organization fields
         orgName,
         regNumber,
         orgDescription,
         orgType,
+        // Restaurant fields
         resName,
         openTime,
         closeTime,
         resDescription,
+        // Individual Donor fields
         fullName,
         idcard,
-        exp: Math.floor(Date.now() / 1000) + 60 * 60,
       };
-      const base64 = (obj) => btoa(JSON.stringify(obj));
-      const fakeToken = `header.${base64(fakePayload)}.signature`;
-      login(fakeToken);
+
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(signupData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Signup failed');
+        return;
+      }
+
+      login(data.token);
       router.push("/dashboard");
-    } else {
-      setError("Please fill all required fields");
+    } catch (error) {
+      console.error('Signup error:', error);
+      setError('Network error. Please try again.');
     }
   };
 

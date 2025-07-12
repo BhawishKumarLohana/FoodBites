@@ -16,21 +16,29 @@ export default function LoginPage() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    // Mock API call: returns a fake JWT with role
-    if (email && password) {
-      // Simulate backend response
-      const fakeRole = email.includes("ngo") ? "claimant" : "donor";
-      const fakePayload = {
-        email,
-        role: fakeRole,
-        exp: Math.floor(Date.now() / 1000) + 60 * 60,
-      };
-      const base64 = (obj) => btoa(JSON.stringify(obj));
-      const fakeToken = `header.${base64(fakePayload)}.signature`;
-      login(fakeToken);
+    setError("");
+    
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Login failed');
+        return;
+      }
+
+      login(data.token);
       router.push("/dashboard");
-    } else {
-      setError("Invalid credentials");
+    } catch (error) {
+      console.error('Login error:', error);
+      setError('Network error. Please try again.');
     }
   };
 
