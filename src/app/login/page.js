@@ -5,12 +5,14 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { setToken, decodeToken } from "../../jwt";
 import { useRouter } from "next/navigation";
+import { useAuth } from "../AuthContext";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const router = useRouter();
+  const { login } = useAuth();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -25,7 +27,7 @@ export default function LoginPage() {
       };
       const base64 = (obj) => btoa(JSON.stringify(obj));
       const fakeToken = `header.${base64(fakePayload)}.signature`;
-      setToken(fakeToken);
+      login(fakeToken);
       router.push("/dashboard");
     } else {
       setError("Invalid credentials");

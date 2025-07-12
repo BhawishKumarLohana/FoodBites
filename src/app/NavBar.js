@@ -1,19 +1,13 @@
 "use client";
-import { useEffect, useState } from "react";
-import { getToken, removeToken } from "../jwt";
 import { useRouter } from "next/navigation";
+import { useAuth } from "./AuthContext";
 
 export default function NavBar() {
-  const [loggedIn, setLoggedIn] = useState(false);
+  const { user, logout } = useAuth();
   const router = useRouter();
 
-  useEffect(() => {
-    setLoggedIn(!!getToken());
-  }, []);
-
   const handleLogout = () => {
-    removeToken();
-    setLoggedIn(false);
+    logout();
     router.push("/login");
   };
 
@@ -25,7 +19,7 @@ export default function NavBar() {
         </div>
         <div className="space-x-4">
           <a href="/" className="text-gray-700 hover:text-blue-600">Home</a>
-          {loggedIn ? (
+          {user ? (
             <>
               <a href="/dashboard" className="text-gray-700 hover:text-blue-600">Dashboard</a>
               <a href="/profile" className="text-gray-700 hover:text-blue-600">Profile</a>
