@@ -4,7 +4,7 @@ import { getToken, decodeToken, removeToken } from "../../jwt";
 import { useRouter } from "next/navigation";
 
 const MOCK_DONATIONS = [
-  { id: 1, type: "Rice", amount: "10 kg", status: "Available", pickup: "12-2pm", location: "Downtown", image: "", date: "2024-06-01" },
+  { id: 1, type: "Rice", amount: "11 kg", status: "Available", pickup: "12-2pm", location: "Downtown", image: "", date: "2024-06-01" },
   { id: 2, type: "Bread", amount: "20 loaves", status: "Claimed", pickup: "3-4pm", location: "Bakery St.", image: "", date: "2024-06-02" },
   { id: 3, type: "Curry", amount: "5 kg", status: "Expired", pickup: "1-2pm", location: "Main Ave.", image: "", date: "2024-05-30" },
 ];
