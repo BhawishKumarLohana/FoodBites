@@ -83,7 +83,7 @@ model Restaurant {
 
 model Food {
   foodId     Int         @id @unique @default(autoincrement())
-  claimId    Int         @unique
+  claimId    Int?         @unique
   DonatedByRes     Int         
   DonatedByInd     Int         
   resName    String?
