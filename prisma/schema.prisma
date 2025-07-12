@@ -14,71 +14,112 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Status {
+  PENDING
+  COMPLETE
+}
+
 enum UserType {
   ORGANIZATION
   RESTAURANT
   INDIVIDUAL_DONOR
 }
-
-enum Status{
-  PENDING 
-  COMPLETE
+enum ActionType{
+  CREATE_FOOD
+  UPDATE_FOOD
+  DELETE_FOOD
+  CLAIM_FOOD
+  CANCEL_CLAIM
 }
 
-
 model User {
-  userId    Int       @id @default(autoincrement())
-  type      UserType
-  email     String    @unique
-  password  String
-  address   String
-  country   String
-  city      String
-  createdAt DateTime  @default(now())
-  primary_PhoneN String 
+  userId           Int      @id @default(autoincrement())
+  type             UserType
+  email            String   @unique
+  password         String
+  address          String
+  country          String
+  city             String
+  createdAt        DateTime @default(now())
+  primary_PhoneN   String
   secondary_PhoneN String
 
   // Specializations (1:1) 
-  organization     Organization?
-  restaurant       Restaurant?
-  individualDonor  IndividualDonor?
-}
-model Organization {
-  userId    Int    @id
-  orgName   String
-  regNumber Int?    @unique //optional
-  description String? //optional
-  type      String //NGO,NPO,ETC
-  user      User   @relation(fields: [userId], references: [userId])
+  organization    Organization?
+  restaurant      Restaurant?
+  individualDonor IndividualDonor?
+  activitylog ActivityLog[]
 }
 
-model Restaurant {
-  userId    Int    @id
-  ResName      String
-  openTime String
-  closeTime String
-  description String?
-  user      User   @relation(fields: [userId], references: [userId])
+model Organization {
+  userId      Int         @id @unique
+  orgName     String
+  regNumber   Int?        @unique //optional
+  description String? //optional
+  type        String //NGO,NPO,ETC
+  foodclaim FoodClaim[]
+  user        User        @relation(fields: [userId], references: [userId])
 }
 
 model IndividualDonor {
-  userId   Int    @id
-  fullName String
-  cnic     String? @unique
-  user     User   @relation(fields: [userId], references: [userId])
+  userId    Int         @id @unique
+  fullName  String
+  idcard    String?     @unique
+  food Food[]
+  user      User        @relation(fields: [userId], references: [userId])
 }
 
-model FoodListing{
-  foodId Int @id @default(autoincrement())
-  userId Int @unique
-  orgName String
-  title String
-  quantity Int 
-  deadline DateTime
-  status  Status 
+model Restaurant {
+  userId      Int     @id @unique
+  ResName     String
+  openTime    String
+  closeTime   String
+  description String?
 
-  
-
-   
+  foodId    Int?        @unique
+  food      Food[]
+  user      User        @relation(fields: [userId], references: [userId])
 }
+
+model Food {
+  foodId     Int         @id @unique @default(autoincrement())
+  claimId    Int         @unique
+  DonatedByRes     Int         
+  DonatedByInd     Int         
+  resName    String?
+  title      String      @unique
+  quantity   Int
+  deadline   DateTime
+  foodclaim FoodClaim?
+
+  ind      IndividualDonor     @relation(fields: [DonatedByInd],references: [userId])
+  res       Restaurant         @relation(fields: [DonatedByRes],references: [userId])
+}
+model FoodClaim {
+  claimId Int @id @default(autoincrement()) 
+  claimedAt DateTime
+
+  foodId Int @unique 
+  food Food @relation(fields: [foodId],references: [foodId])
+
+  claimedBy Int @unique 
+  org Organization @relation(fields: [claimedBy],references: [userId])
+
+  deliver Boolean
+  specialInstruction String?
+
+  status     Status
+}
+model ActivityLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int 
+  action    ActionType   // e.g. "CREATE_FOOD", "CLAIM_FOOD", "UPDATE_PROFILE"
+  targetId  Int?      // optional: refers to related record (e.g. foodId, claimId)
+  timestamp DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [userId])
+}
+
+
+
+
 
