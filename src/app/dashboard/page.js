@@ -14,13 +14,36 @@ export default function DashboardPage() {
   const [form, setForm] = useState({ title: "", amount: "", deadline: "", isDelivery:"" });
   const [available, setAvailable] = useState([]);
   const [claimed, setClaimed] = useState([]);
+  const [unClaimed,setunClaimed]=useState([]);
   const [selectedPin, setSelectedPin] = useState(null);
-  const [showModal, setShowModal] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   const [nearbyDonors, setNearbyDonors] = useState([]);
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationError, setLocationError] = useState(null);
+  const [selectedFood, setSelectedFood] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [modalPos, setModalPos] = useState({ x: 0, y: 0 });
+  const [claimModalOpen, setClaimModalOpen] = useState(false);
+    const [claimForm, setClaimForm] = useState({
+      status: "PENDING",
+      specialInstruction: "",
+    });
+
+  
+
+
   const router = useRouter();
+
+  const fetchUnclaimed = async () => {
+    const res = await fetch("/api/food/unclaimed");
+    const data = await res.json();
+    console.log(data);
+    if (res.ok) {
+      setClaimed(data);
+    } else {
+      console.error("Failed to fetch unclaimed food:", data.error);
+    }
+  };
 
   useEffect(() => {
     const token = getToken();
@@ -54,7 +77,9 @@ export default function DashboardPage() {
       console.error('Error fetching donations:', err);
     }
   };
+  
   fetchDonations();
+  fetchUnclaimed();
 
   }, [router]);
   
@@ -98,17 +123,57 @@ export default function DashboardPage() {
   } else {
     console.error("Error adding donation:", data.error);
   }
+
+  
+
 };
 
 
   // Claimant: Claim food
-  const handleClaim = (item) => {
-    setClaimed([{ id: Date.now(), donor: item.donor, type: item.type, amount: item.amount, date: new Date().toISOString().slice(0, 10) }, ...claimed]);
-    setAvailable(available.filter((a) => a.id !== item.id));
-    setNearbyDonors(nearbyDonors.filter((a) => a.id !== item.id));
-    setShowModal(false);
-    setSelectedPin(null);
-  };
+  const handleClaim = async (selectedFood) => {
+  try {
+    const token = getToken()
+    if (!token) {
+      console.error("No auth token found.");
+      return;
+    }
+
+    console.log("FOOD ID SENT"+selectedFood.foodId);
+    console.log("FOOD ID SENT"+claimForm.status);
+    console.log("FOOD ID SENT"+claimForm.specialInstruction);
+
+    const res = await fetch("/api/food/claim", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        foodId: selectedFood.foodId,
+        status: claimForm.status,
+        specialInstruction: claimForm.specialInstruction
+      }),
+    });
+
+    const data = await res.json();
+    console.log("RESPONSE ")
+
+    if (res.ok) {
+      console.log("Claim successful:", data);
+      fetchUnclaimed();
+      setClaimModalOpen(false);
+      setClaimForm({ status: "PENDING", specialInstruction: "" });
+      setSelectedFood(null);
+      
+
+    
+    } else {
+      console.error("Claim failed:", data.error);
+    }
+  } catch (error) {
+    console.error("Error in handleClaim:", error);
+  }
+};
 
   // Handle donor click from map
   const handleDonorClick = (donor) => {
@@ -279,17 +344,185 @@ export default function DashboardPage() {
               </div>
             </div>
           )}
-          <h3 className="text-lg font-semibold mb-2">Claimed Items</h3>
-          <ul className="bg-white p-4 rounded shadow">
-            {claimed.map((item) => (
-              <li key={item.id} className="mb-2 border-b pb-2 last:border-b-0">
-                <strong>{item.type}</strong> from {item.donor} - {item.amount} <br />
-                <span className="text-xs text-gray-500">Date: {item.date}</span>
-              </li>
-            ))}
-          </ul>
+         <h3 className="text-xl font-semibold mb-4 text-gray-800">Available Food Donations</h3>
+<div className="grid gap-4">
+  {claimed.map((item) => (
+    <div
+      key={item.foodId}
+      className="bg-white rounded-lg shadow-md p-4 border border-gray-200 transition hover:shadow-lg"
+    >
+      <div className="flex justify-between items-center mb-2">
+        <h4 className="text-lg font-bold text-green-700">{item.title}</h4>
+        <span
+          className={`text-xs px-2 py-1 rounded-full border ${
+            item.isDelivery
+              ? 'bg-blue-100 text-blue-700 border-blue-300'
+              : 'bg-yellow-100 text-yellow-700 border-yellow-300'
+          }`}
+        >
+          {item.isDelivery ? 'Delivery' : 'Pickup'}
+        </span>
+      </div>
+
+      <div className="text-sm text-gray-600 mb-1">
+        <span className="font-medium">Quantity:</span> {item.quantity}
+      </div>
+
+      <div className="text-sm text-gray-600 mb-1">
+        <span className="font-medium">Donor:</span>{' '}
+        {item.user?.email || 'N/A'}{' '}
+        <span className="text-xs text-gray-400 ml-1">
+          ({item.user?.primary_PhoneN || 'No Phone'})
+        </span>
+      </div>
+
+      <div className="text-sm text-gray-600 mb-1">
+        <span className="font-medium">Location:</span>{' '}
+        {item.user?.address}, {item.user?.city}, {item.user?.country}
+      </div>
+
+      <div className="text-sm text-gray-600 mb-3">
+        <span className="font-medium">Deadline:</span>{' '}
+        {item.deadline ? new Date(item.deadline).toLocaleString() : '-'}
+      </div>
+
+      <div className="flex justify-end gap-2">
+        <button
+          onClick={(e) => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            setModalPos({ x: rect.left, y: rect.bottom + window.scrollY });
+            setSelectedFood(item);
+            setShowModal(true);
+          }}
+          className="text-sm bg-gray-100 text-gray-700 border border-gray-300 px-3 py-1 rounded hover:bg-gray-200 transition"
+        >
+          View More
+        </button>
+
+          
+       <button
+        onClick={() => {
+          setSelectedFood(item); 
+          setClaimModalOpen(true);
+        }}
+        className="text-sm bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition"
+      >
+        Claim
+      </button>
+
+
+      </div>
+    </div>
+  ))}
+</div>
+
+
         </div>
       )}
+      {showModal && selectedFood && (
+  <div
+    className="absolute z-50 w-96 max-w-full"
+    style={{
+      top: modalPos.y + 10, // offset to avoid overlapping the button
+      left: modalPos.x,
+    }}
+  >
+    <div className="bg-white border border-gray-200 shadow-xl rounded-xl p-6 relative">
+      <button
+        className="absolute top-3 right-4 text-gray-400 hover:text-gray-700 text-xl"
+        onClick={() => setShowModal(false)}
+      >
+        ×
+      </button>
+
+      <h2 className="text-xl font-bold text-green-700 mb-3">
+        {selectedFood.title}
+      </h2>
+
+      <div className="text-sm text-gray-700 space-y-2">
+        <p><strong>Quantity:</strong> {selectedFood.quantity}</p>
+        <p><strong>Type:</strong> {selectedFood.isDelivery ? "Delivery" : "Pickup"}</p>
+        <p><strong>Deadline:</strong> {new Date(selectedFood.deadline).toLocaleString()}</p>
+        <hr className="my-2" />
+        <p className="font-semibold">Donor Info:</p>
+        <p>{selectedFood.user?.email}</p>
+        <p>{selectedFood.user?.primary_PhoneN}</p>
+        <p>{selectedFood.user?.address}, {selectedFood.user?.city}, {selectedFood.user?.country}</p>
+      </div>
+
+      <div className="flex justify-end mt-4">
+        <button
+          onClick={() => setShowModal(false)}
+          className="bg-gray-100 text-gray-800 px-3 py-1 rounded hover:bg-gray-200 transition"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+{claimModalOpen && selectedFood && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm transition">
+    <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 mx-4 sm:mx-0">
+      <h2 className="text-xl font-bold text-green-700 mb-4">Confirm Claim</h2>
+
+      <div className="mb-4">
+        <label className="block text-sm font-semibold text-gray-700 mb-1">Claim Status</label>
+        <select
+          value={claimForm.status}
+          onChange={(e) => setClaimForm({ ...claimForm, status: e.target.value })}
+          className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
+        >
+          <option value="PENDING">Pending</option>
+          <option value="COMPLETE">Complete</option>
+        </select>
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-sm font-semibold text-gray-700 mb-1">Special Instructions</label>
+        <textarea
+          rows={4}
+          placeholder="Add any special instructions for the donor..."
+          value={claimForm.specialInstruction}
+          onChange={(e) =>
+            setClaimForm({ ...claimForm, specialInstruction: e.target.value })
+          }
+          className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+        />
+      </div>
+
+      <div className="flex justify-end space-x-3">
+        <button
+          onClick={() => {
+            setClaimModalOpen(false);
+            setClaimForm({ status: "PENDING", specialInstruction: "" });
+            setSelectedFood(null);
+          }}
+          className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition text-sm"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={() => {
+            handleClaim({
+              ...selectedFood,
+              status: claimForm.status,
+              specialInstruction: claimForm.specialInstruction,
+            });
+            
+          }}
+          className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition text-sm"
+        >
+          Confirm Claim
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+
+
     </div>
   );
 } 

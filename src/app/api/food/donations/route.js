@@ -56,6 +56,7 @@ export async function POST(req) {
         quantity: quantity,
         deadline: new Date(deadline),
         isDelivery: isDelivery,
+        claimId:null,
       },
     });
 

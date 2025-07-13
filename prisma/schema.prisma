@@ -89,7 +89,7 @@ model Food {
   title      String    
   quantity   String
   deadline   DateTime
-  foodclaim FoodClaim?
+  foodclaim FoodClaim[]
 
   user User @relation(fields: [DonatedBy],references: [userId])
   
@@ -98,10 +98,10 @@ model FoodClaim {
   claimId Int @id @default(autoincrement()) 
   claimedAt DateTime
 
-  foodId Int @unique 
+  foodId Int
   food Food @relation(fields: [foodId],references: [foodId])
 
-  claimedBy Int @unique 
+  claimedBy Int 
   org Organization @relation(fields: [claimedBy],references: [userId])
 
   deliver Boolean
