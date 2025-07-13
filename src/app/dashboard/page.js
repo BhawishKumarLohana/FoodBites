@@ -3,13 +3,14 @@ import React, { useState, useEffect } from "react";
 import { getToken, decodeToken, removeToken } from "../../jwt";
 import { useRouter } from "next/navigation";
 import GoogleMap from "../components/GoogleMap";
-import { getUserLocation, filterDonorsByDistance } from "../utils/location";
+import { getUserLocation, filterDonorsByDistance, getCoordsFromAddress } from "../utils/location";
 
 
 
 
 export default function DashboardPage() {
   const [role, setRole] = useState(null);
+  const [userData, setUserData] = useState(null);
   const [donations, setDonations] = useState([]);
   const [form, setForm] = useState({ title: "", amount: "", deadline: "", isDelivery:"" });
   const [available, setAvailable] = useState([]);
@@ -33,6 +34,25 @@ export default function DashboardPage() {
 
 
   const router = useRouter();
+
+  const fetchUserData = async (userId, token) => {
+    try {
+      const response = await fetch(`/api/users/${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUserData(data);
+      } else {
+        console.error('Failed to fetch user data');
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  };
 
   const fetchUnclaimed = async () => {
     const res = await fetch("/api/food/unclaimed");
@@ -58,6 +78,10 @@ export default function DashboardPage() {
       return;
     }
     setRole(payload.role);
+    
+    // Fetch user data for location
+    fetchUserData(payload.userId, token);
+    
     // Fetch donations after auth
   const fetchDonations = async () => {
     try {
@@ -82,10 +106,71 @@ export default function DashboardPage() {
   fetchUnclaimed();
 
   }, [router]);
-  
 
-  
-
+  // Get user location for claimants
+  useEffect(() => {
+    if (role === "claimant" && userData) {
+      setLocationLoading(true);
+      setLocationError(null);
+      
+      getUserLocation(userData.address, userData.city, userData.country)
+        .then(async location => {
+          setUserLocation(location);
+          // Convert claimed food to donor format for map
+          const donorsForMap = claimed.map(food => ({
+            id: food.foodId,
+            donor: food.user?.email || 'Unknown',
+            type: food.title,
+            amount: food.quantity,
+            pickup: food.isDelivery ? 'Delivery' : 'Pickup',
+            location: `${food.user?.address}, ${food.user?.city}, ${food.user?.country}`,
+            lat: null, // Will be set after geocoding
+            lng: null,
+            food: food // Keep original food data
+          }));
+          
+          // Geocode donor addresses
+          const donorsWithCoords = await Promise.all(
+            donorsForMap.map(async (donor) => {
+              if (donor.location && donor.location !== 'Unknown, Unknown, Unknown') {
+                const coords = await getCoordsFromAddress(donor.location);
+                return {
+                  ...donor,
+                  lat: coords?.lat || null,
+                  lng: coords?.lng || null,
+                };
+              }
+              return donor;
+            })
+          );
+          console.log('Donors with coords:', donorsWithCoords);
+          // Filter donors within 10km radius
+          const nearby = filterDonorsByDistance(donorsWithCoords, location.lat, location.lng, 10);
+          setNearbyDonors(nearby);
+        })
+        .catch(error => {
+          console.error('Location error:', error);
+          setLocationError(error.message);
+          // Use default location and all donors if location fails
+          setUserLocation({ lat: 40.7128, lng: -74.0060 });
+          const donorsForMap = claimed.map(food => ({
+            id: food.foodId,
+            donor: food.user?.email || 'Unknown',
+            type: food.title,
+            amount: food.quantity,
+            pickup: food.isDelivery ? 'Delivery' : 'Pickup',
+            location: `${food.user?.address}, ${food.user?.city}, ${food.user?.country}`,
+            lat: null,
+            lng: null,
+            food: food
+          }));
+          setNearbyDonors(donorsForMap);
+        })
+        .finally(() => {
+          setLocationLoading(false);
+        });
+    }
+  }, [role, userData, claimed]);
 
   // Donor: Add donation
   const handleChange = (e) => {
@@ -177,7 +262,7 @@ export default function DashboardPage() {
 
   // Handle donor click from map
   const handleDonorClick = (donor) => {
-    setSelectedPin(donor);
+    setSelectedFood(donor.food);
     setShowModal(true);
   };
 
