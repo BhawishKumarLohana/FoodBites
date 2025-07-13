@@ -7,23 +7,13 @@ import { getUserLocation, filterDonorsByDistance } from "../utils/location";
 
 
 
-const MOCK_AVAILABLE = [
-  { id: 1, donor: "Restaurant A", type: "Rice", amount: "10 kg", pickup: "12-2pm", location: "Downtown", lat: 40.7128, lng: -74.0060 },
-  { id: 2, donor: "Anonymous", type: "Bread", amount: "20 loaves", pickup: "3-4pm", location: "Bakery St.", lat: 40.7138, lng: -74.0050 },
-  { id: 3, donor: "Cafe C", type: "Curry", amount: "5 kg", pickup: "1-2pm", location: "Main Ave.", lat: 40.7148, lng: -74.0040 },
-];
-
-const MOCK_CLAIMED = [
-  { id: 1, donor: "Restaurant A", type: "Rice", amount: "10 kg", date: "2024-06-01" },
-  { id: 2, donor: "Bakery B", type: "Bread", amount: "20 loaves", date: "2024-06-02" },
-];
 
 export default function DashboardPage() {
   const [role, setRole] = useState(null);
   const [donations, setDonations] = useState([]);
   const [form, setForm] = useState({ title: "", amount: "", deadline: "", isDelivery:"" });
-  const [available, setAvailable] = useState(MOCK_AVAILABLE);
-  const [claimed, setClaimed] = useState(MOCK_CLAIMED);
+  const [available, setAvailable] = useState([]);
+  const [claimed, setClaimed] = useState([]);
   const [selectedPin, setSelectedPin] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
