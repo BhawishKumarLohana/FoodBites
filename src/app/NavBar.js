@@ -15,7 +15,7 @@ export default function NavBar() {
     <nav className="bg-white shadow mb-6">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <div className="font-bold text-xl">
-          <a href="/">Waste Less, Feed More</a>
+          <a href="/">FoodBites</a>
         </div>
         <div className="space-x-4">
           <a href="/" className="text-gray-700 hover:text-blue-600">Home</a>
