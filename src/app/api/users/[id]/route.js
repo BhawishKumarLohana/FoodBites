@@ -20,9 +20,10 @@ function verifyToken(request) {
 }
 
 // GET /api/users/[id] - Get specific user profile
-export async function GET(request, { params }) {
+export async function GET(request, context) {
+  const awaitedParams = await context.params;
   try {
-    const userId = parseInt(params.id);
+    const userId = parseInt(awaitedParams.id);
     if (isNaN(userId)) {
       return new Response(JSON.stringify({ error: 'Invalid user ID' }), {
         status: 400,
@@ -82,9 +83,10 @@ export async function GET(request, { params }) {
 }
 
 // PUT /api/users/[id] - Update user profile
-export async function PUT(request, { params }) {
+export async function PUT(request, context) {
+  const awaitedParams = await context.params;
   try {
-    const userId = parseInt(params.id);
+    const userId = parseInt(awaitedParams.id);
     if (isNaN(userId)) {
       return new Response(JSON.stringify({ error: 'Invalid user ID' }), {
         status: 400,
@@ -254,9 +256,10 @@ export async function PUT(request, { params }) {
 }
 
 // DELETE /api/users/[id] - Delete user account
-export async function DELETE(request, { params }) {
+export async function DELETE(request, context) {
+  const awaitedParams = await context.params;
   try {
-    const userId = parseInt(params.id);
+    const userId = parseInt(awaitedParams.id);
     if (isNaN(userId)) {
       return new Response(JSON.stringify({ error: 'Invalid user ID' }), {
         status: 400,
