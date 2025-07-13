@@ -85,9 +85,9 @@ model Food {
   foodId     Int         @id @unique @default(autoincrement())
   claimId    Int?         @unique
   DonatedBy    Int         
-  resName    String?
+  isDelivery    Boolean? @default(false)
   title      String    
-  quantity   Int
+  quantity   String
   deadline   DateTime
   foodclaim FoodClaim?
 

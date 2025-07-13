@@ -74,7 +74,8 @@ async function main() {
       data: {
         DonatedBy: restUser.userId,
         title: foodTitle,
-        quantity: Math.floor(Math.random() * 20 + 5), // 5–25
+        isDelivery:true,
+        quantity:"20", // 5–25
         deadline: new Date(Date.now() + 3600 * 1000 * 24), // 1 day
       },
     });
