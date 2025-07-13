@@ -30,10 +30,10 @@ function AnimatedNumber({ value, duration = 1200, suffix = "", replayKey }) {
 
 // Team fun facts
 const TEAM_MEMBERS = [
-  { name: "Ayman Jashim", fact: "Loves spicy food and hackathons!" },
-  { name: "Bhawish Kumar Lohana", fact: "Can debug anything—even in his sleep." },
+  { name: "Ayman Jashim", fact: "Debugging, sipping tea, and dreaming up the next big hackathon win!" },
+  { name: "Bhawish Kumar Lohana", fact: "I Code and Do Model United Nations!!" },
   { name: "Bibinur Adikhan", fact: "Designs with pixels and paints with code." },
-  { name: "Habibul Bashar", fact: "Map wizard and data enthusiast." },
+  { name: "Habibul Bashar", fact: "I can’t tie shoelaces." },
 ];
 
 export default function Home() {
@@ -197,8 +197,34 @@ export default function Home() {
         </div>
       </motion.section>
 
+      {/* Map Feature Section */}
+      <motion.section
+        className="py-16 bg-white flex flex-col items-center"
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7, delay: 0.3 }}
+        viewport={{ amount: 0.3 }}
+      >
+        <h2 className="text-3xl font-bold mb-6 text-green-800">See Food Near You</h2>
+        <p className="max-w-2xl text-center text-lg text-gray-700 mb-8">
+          Claimants can view available food on a live map and claim what they need in real time. Our interactive dashboard makes it easy to find and request surplus food from nearby donors.
+        </p>
+        <div className="w-full flex justify-center">
+          <div className="rounded-2xl shadow-2xl border border-gray-200 overflow-hidden max-w-3xl w-full bg-gray-50">
+            <Image
+              src="/ss.jpeg"
+              alt="Map of available food feature screenshot"
+              width={900}
+              height={340}
+              className="w-full h-auto object-cover"
+              priority={false}
+            />
+          </div>
+        </div>
+      </motion.section>
+
       {/* Team Section */}
-      <section className="py-16 bg-white flex flex-col items-center">
+      <section className="py-16 bg-gray-50 flex flex-col items-center">
         <h2 className="text-3xl font-bold mb-8 text-green-800">Meet the Team</h2>
         <div className="flex flex-wrap gap-8 justify-center">
           {TEAM_MEMBERS.map((member, idx) => (

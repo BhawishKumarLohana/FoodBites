@@ -45,13 +45,13 @@ export default function SignupPage() {
   // Step 1: User type
   const Step1 = (
     <div className="flex flex-col items-center">
-      <h1 className="text-2xl font-bold mb-6">Sign Up</h1>
-      <div className="bg-white p-6 rounded shadow-md w-80 flex flex-col items-center">
-        <p className="mb-4 font-semibold text-center">What type of user are you?</p>
+      <h1 className="text-3xl font-extrabold mb-8 text-green-800 tracking-tight">Sign Up</h1>
+      <div className="bg-white p-8 rounded-2xl shadow-2xl border border-gray-200 w-96 flex flex-col items-center transition-all duration-300 hover:-translate-y-1 hover:shadow-green-200/80">
+        <p className="mb-6 font-semibold text-center text-gray-700 text-lg">What type of user are you?</p>
         {USER_TYPES.map((type) => (
           <button
             key={type.value}
-            className={`w-full mb-3 p-2 rounded border font-medium ${userType === type.value ? "bg-green-600 text-white" : "bg-gray-100 text-gray-800"}`}
+            className={`w-full mb-3 p-3 rounded-xl border font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-300 ${userType === type.value ? "bg-green-600 text-white border-green-600 shadow" : "bg-gray-100 text-gray-800 border-gray-200 hover:bg-green-50"}`}
             onClick={() => setUserType(type.value)}
             type="button"
           >
@@ -59,13 +59,13 @@ export default function SignupPage() {
           </button>
         ))}
         <button
-          className="w-full bg-green-600 text-white p-2 rounded mt-2 disabled:opacity-50"
+          className="w-full bg-green-600 hover:bg-green-700 text-white p-3 rounded-xl mt-2 font-semibold text-lg shadow transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-300 disabled:opacity-50"
           onClick={next}
           disabled={!userType}
         >
           Next
         </button>
-        <p className="mt-2 text-sm">Already have an account? <Link href="/login" className="text-blue-600">Login</Link></p>
+        <p className="mt-4 text-sm text-gray-600">Already have an account? <Link href="/login" className="text-blue-600 hover:underline">Login</Link></p>
       </div>
     </div>
   );
@@ -73,14 +73,14 @@ export default function SignupPage() {
   // Step 2: Email & password
   const Step2 = (
     <div className="flex flex-col items-center">
-      <h1 className="text-2xl font-bold mb-6">Sign Up</h1>
-      <div className="bg-white p-6 rounded shadow-md w-80 flex flex-col items-center">
+      <h1 className="text-3xl font-extrabold mb-8 text-green-800 tracking-tight">Sign Up</h1>
+      <div className="bg-white p-8 rounded-2xl shadow-2xl border border-gray-200 w-96 flex flex-col items-center transition-all duration-300 hover:-translate-y-1 hover:shadow-green-200/80">
         <input
           type="email"
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full mb-3 p-2 border rounded"
+          className="w-full mb-4 p-3 border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-green-300 transition-all duration-200"
           required
         />
         <input
@@ -88,12 +88,12 @@ export default function SignupPage() {
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full mb-3 p-2 border rounded"
+          className="w-full mb-4 p-3 border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-green-300 transition-all duration-200"
           required
         />
-        <div className="flex w-full justify-between">
-          <button type="button" className="text-gray-600 underline" onClick={prev}>Back</button>
-          <button type="button" className="bg-green-600 text-white px-4 py-2 rounded" onClick={next} disabled={!email || !password}>Next</button>
+        <div className="flex w-full justify-between mt-2">
+          <button type="button" className="text-gray-600 underline hover:text-green-700" onClick={prev}>Back</button>
+          <button type="button" className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-xl font-semibold shadow transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-300" onClick={next} disabled={!email || !password}>Next</button>
         </div>
       </div>
     </div>
@@ -102,14 +102,14 @@ export default function SignupPage() {
   // Step 3: Address, country, city, phones
   const Step3 = (
     <div className="flex flex-col items-center">
-      <h1 className="text-2xl font-bold mb-6">Sign Up</h1>
-      <div className="bg-white p-6 rounded shadow-md w-80 flex flex-col items-center">
+      <h1 className="text-3xl font-extrabold mb-8 text-green-800 tracking-tight">Sign Up</h1>
+      <div className="bg-white p-8 rounded-2xl shadow-2xl border border-gray-200 w-96 flex flex-col items-center transition-all duration-300 hover:-translate-y-1 hover:shadow-green-200/80">
         <input
           type="text"
           placeholder="Address"
           value={address}
           onChange={(e) => setAddress(e.target.value)}
-          className="w-full mb-3 p-2 border rounded"
+          className="w-full mb-4 p-3 border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-green-300 transition-all duration-200"
           required
         />
         <input
@@ -117,7 +117,7 @@ export default function SignupPage() {
           placeholder="Country"
           value={country}
           onChange={(e) => setCountry(e.target.value)}
-          className="w-full mb-3 p-2 border rounded"
+          className="w-full mb-4 p-3 border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-green-300 transition-all duration-200"
           required
         />
         <input
@@ -125,7 +125,7 @@ export default function SignupPage() {
           placeholder="City"
           value={city}
           onChange={(e) => setCity(e.target.value)}
-          className="w-full mb-3 p-2 border rounded"
+          className="w-full mb-4 p-3 border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-green-300 transition-all duration-200"
           required
         />
         <input
@@ -133,7 +133,7 @@ export default function SignupPage() {
           placeholder="Primary Phone Number"
           value={primaryPhone}
           onChange={(e) => setPrimaryPhone(e.target.value)}
-          className="w-full mb-3 p-2 border rounded"
+          className="w-full mb-4 p-3 border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-green-300 transition-all duration-200"
           required
         />
         <input
@@ -141,11 +141,11 @@ export default function SignupPage() {
           placeholder="Secondary Phone Number (optional)"
           value={secondaryPhone}
           onChange={(e) => setSecondaryPhone(e.target.value)}
-          className="w-full mb-3 p-2 border rounded"
+          className="w-full mb-4 p-3 border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-green-300 transition-all duration-200"
         />
-        <div className="flex w-full justify-between">
-          <button type="button" className="text-gray-600 underline" onClick={prev}>Back</button>
-          <button type="button" className="bg-green-600 text-white px-4 py-2 rounded" onClick={next} disabled={!address || !country || !city || !primaryPhone}>Next</button>
+        <div className="flex w-full justify-between mt-2">
+          <button type="button" className="text-gray-600 underline hover:text-green-700" onClick={prev}>Back</button>
+          <button type="button" className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-xl font-semibold shadow transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-300" onClick={next} disabled={!address || !country || !city || !primaryPhone}>Next</button>
         </div>
       </div>
     </div>
@@ -161,7 +161,7 @@ export default function SignupPage() {
           placeholder="Organization Name"
           value={orgName}
           onChange={(e) => setOrgName(e.target.value)}
-          className="w-full mb-3 p-2 border rounded"
+          className="w-full mb-4 p-3 border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-green-300 transition-all duration-200"
           required
         />
         <input
@@ -169,21 +169,21 @@ export default function SignupPage() {
           placeholder="Registration Number (optional)"
           value={regNumber}
           onChange={(e) => setRegNumber(e.target.value)}
-          className="w-full mb-3 p-2 border rounded"
+          className="w-full mb-4 p-3 border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-green-300 transition-all duration-200"
         />
         <input
           type="text"
           placeholder="Description (optional)"
           value={orgDescription}
           onChange={(e) => setOrgDescription(e.target.value)}
-          className="w-full mb-3 p-2 border rounded"
+          className="w-full mb-4 p-3 border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-green-300 transition-all duration-200"
         />
         <input
           type="text"
           placeholder="Type (NGO, NPO, etc)"
           value={orgType}
           onChange={(e) => setOrgType(e.target.value)}
-          className="w-full mb-3 p-2 border rounded"
+          className="w-full mb-4 p-3 border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-green-300 transition-all duration-200"
           required
         />
       </>
@@ -196,7 +196,7 @@ export default function SignupPage() {
           placeholder="Restaurant Name"
           value={resName}
           onChange={(e) => setResName(e.target.value)}
-          className="w-full mb-3 p-2 border rounded"
+          className="w-full mb-4 p-3 border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-green-300 transition-all duration-200"
           required
         />
         <input
@@ -204,7 +204,7 @@ export default function SignupPage() {
           placeholder="Open Time (e.g. 09:00)"
           value={openTime}
           onChange={(e) => setOpenTime(e.target.value)}
-          className="w-full mb-3 p-2 border rounded"
+          className="w-full mb-4 p-3 border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-green-300 transition-all duration-200"
           required
         />
         <input
@@ -212,7 +212,7 @@ export default function SignupPage() {
           placeholder="Close Time (e.g. 18:00)"
           value={closeTime}
           onChange={(e) => setCloseTime(e.target.value)}
-          className="w-full mb-3 p-2 border rounded"
+          className="w-full mb-4 p-3 border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-green-300 transition-all duration-200"
           required
         />
         <input
@@ -220,7 +220,7 @@ export default function SignupPage() {
           placeholder="Description (optional)"
           value={resDescription}
           onChange={(e) => setResDescription(e.target.value)}
-          className="w-full mb-3 p-2 border rounded"
+          className="w-full mb-4 p-3 border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-green-300 transition-all duration-200"
         />
       </>
     );
@@ -232,7 +232,7 @@ export default function SignupPage() {
           placeholder="Full Name"
           value={fullName}
           onChange={(e) => setFullName(e.target.value)}
-          className="w-full mb-3 p-2 border rounded"
+          className="w-full mb-4 p-3 border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-green-300 transition-all duration-200"
           required
         />
         <input
@@ -240,7 +240,7 @@ export default function SignupPage() {
           placeholder="ID Card (optional)"
           value={idcard}
           onChange={(e) => setIdcard(e.target.value)}
-          className="w-full mb-3 p-2 border rounded"
+          className="w-full mb-4 p-3 border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-green-300 transition-all duration-200"
         />
       </>
     );
@@ -248,12 +248,12 @@ export default function SignupPage() {
 
   const Step4 = (
     <div className="flex flex-col items-center">
-      <h1 className="text-2xl font-bold mb-6">Sign Up</h1>
-      <div className="bg-white p-6 rounded shadow-md w-80 flex flex-col items-center">
+      <h1 className="text-3xl font-extrabold mb-8 text-green-800 tracking-tight">Sign Up</h1>
+      <div className="bg-white p-8 rounded-2xl shadow-2xl border border-gray-200 w-96 flex flex-col items-center transition-all duration-300 hover:-translate-y-1 hover:shadow-green-200/80">
         {Step4Fields}
-        <div className="flex w-full justify-between">
-          <button type="button" className="text-gray-600 underline" onClick={prev}>Back</button>
-          <button type="button" className="bg-green-600 text-white px-4 py-2 rounded" onClick={next}>Next</button>
+        <div className="flex w-full justify-between mt-2">
+          <button type="button" className="text-gray-600 underline hover:text-green-700" onClick={prev}>Back</button>
+          <button type="button" className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-xl font-semibold shadow transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-300" onClick={next}>Next</button>
         </div>
       </div>
     </div>
@@ -314,9 +314,9 @@ export default function SignupPage() {
 
   const Step5 = (
     <div className="flex flex-col items-center">
-      <h1 className="text-2xl font-bold mb-6">Review & Submit</h1>
-      <div className="bg-white p-6 rounded shadow-md w-96 flex flex-col items-center">
-        <div className="w-full mb-4">
+      <h1 className="text-3xl font-extrabold mb-8 text-green-800 tracking-tight">Review & Submit</h1>
+      <div className="bg-white p-8 rounded-2xl shadow-2xl border border-gray-200 w-[28rem] flex flex-col items-center transition-all duration-300 hover:-translate-y-1 hover:shadow-green-200/80">
+        <div className="w-full mb-6 text-base text-gray-700">
           <div className="mb-2"><strong>User Type:</strong> {USER_TYPES.find(t => t.value === userType)?.label}</div>
           <div className="mb-2"><strong>Email:</strong> {email}</div>
           <div className="mb-2"><strong>Address:</strong> {address}, {city}, {country}</div>
@@ -346,16 +346,16 @@ export default function SignupPage() {
           )}
         </div>
         {error && <div className="text-red-600 mb-2">{error}</div>}
-        <div className="flex w-full justify-between">
-          <button type="button" className="text-gray-600 underline" onClick={prev}>Back</button>
-          <button type="button" className="bg-green-600 text-white px-4 py-2 rounded" onClick={handleSubmit}>Submit</button>
+        <div className="flex w-full justify-between mt-2">
+          <button type="button" className="text-gray-600 underline hover:text-green-700" onClick={prev}>Back</button>
+          <button type="button" className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-xl font-semibold shadow transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-300" onClick={handleSubmit}>Submit</button>
         </div>
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-green-50 via-white to-blue-50">
       {step === 1 && Step1}
       {step === 2 && Step2}
       {step === 3 && Step3}
