@@ -31,7 +31,7 @@ function AnimatedNumber({ value, duration = 1200, suffix = "", replayKey }) {
 // Team fun facts
 const TEAM_MEMBERS = [
   { name: "Ayman Jashim", fact: "Debugging, sipping tea, and dreaming up the next big hackathon win!" },
-  { name: "Bhawish Kumar Lohana", fact: "I Code and Do Model United Nations!!" },
+  { name: "Bhawish Kumar", fact: "I Code and Do Model United Nations!!" },
   { name: "Bibinur Adikhan", fact: "Designs with pixels and paints with code." },
   { name: "Habibul Bashar", fact: "I can’t tie shoelaces." },
 ];

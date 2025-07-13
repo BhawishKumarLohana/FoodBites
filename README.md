@@ -1,36 +1,64 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+
+
 
 ## Getting Started
 
-First, run the development server:
+To run the project locally, please follow these steps:
+
+### 1. Clone the Repository
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/BhawishKumarLohana UnitedHack-Hackathon-Project
+cd into directory
+````
+
+### 2. Create the Environment File
+
+* Copy the `.env.example` file and rename it to `.env`.
+* Fill in the required environment variables as shown below.
+
+### 3. Set Up MySQL Database
+
+* Start your MySQL server.
+* Create a new database named `FoodBridge` (or choose your own name).
+* Update the `DATABASE_URL` in your `.env` file accordingly:
+
+```env
+DATABASE_URL="mysql://root:root@localhost:3306/FoodBridge"
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Modify the credentials and database name as needed.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+### 4. Generate JWT Secret
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Use the following command to generate a strong secret:
 
-## Learn More
+```bash
+node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+```
 
-To learn more about Next.js, take a look at the following resources:
+Add the result to your `.env` file:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```env
+JWT_SECRET="your-generated-secret"
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 5. Add Google Maps API Key
 
-## Deploy on Vercel
+Add your Google Maps API key to your `.env` file:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```env
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY="your-google-maps-api-key"
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+After completing the steps above, you can start the project with:
+
+```bash
+npm install
+npm run dev
+```
+
+```
+```
