@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from "react";
 import { getToken, decodeToken, removeToken } from "../../jwt";
 import { useRouter } from "next/navigation";
+import GoogleMap from "../components/GoogleMap";
+import { getUserLocation, filterDonorsByDistance } from "../utils/location";
 
 const MOCK_DONATIONS = [
   { id: 1, type: "Rice", amount: "11 kg", status: "Available", pickup: "12-2pm", location: "Downtown", image: "", date: "2024-06-01" },
@@ -22,12 +24,17 @@ const MOCK_CLAIMED = [
 
 export default function DashboardPage() {
   const [role, setRole] = useState(null);
+  const [userData, setUserData] = useState(null);
   const [donations, setDonations] = useState(MOCK_DONATIONS);
   const [form, setForm] = useState({ type: "", amount: "", pickup: "", image: "", location: "" });
   const [available, setAvailable] = useState(MOCK_AVAILABLE);
   const [claimed, setClaimed] = useState(MOCK_CLAIMED);
   const [selectedPin, setSelectedPin] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
+  const [nearbyDonors, setNearbyDonors] = useState([]);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [locationError, setLocationError] = useState(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -43,7 +50,55 @@ export default function DashboardPage() {
       return;
     }
     setRole(payload.role);
+    
+    // Fetch user data for location
+    fetchUserData(payload.userId, token);
   }, [router]);
+
+  const fetchUserData = async (userId, token) => {
+    try {
+      const response = await fetch(`/api/users/${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUserData(data);
+      } else {
+        console.error('Failed to fetch user data');
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  };
+
+  // Get user location for claimants
+  useEffect(() => {
+    if (role === "claimant" && userData) {
+      setLocationLoading(true);
+      setLocationError(null);
+      
+      getUserLocation(userData.address, userData.city, userData.country)
+        .then(location => {
+          setUserLocation(location);
+          // Filter donors within 10km radius
+          const nearby = filterDonorsByDistance(available, location.lat, location.lng, 10);
+          setNearbyDonors(nearby);
+        })
+        .catch(error => {
+          console.error('Location error:', error);
+          setLocationError(error.message);
+          // Use default location and all donors if location fails
+          setUserLocation({ lat: 40.7128, lng: -74.0060 });
+          setNearbyDonors(available);
+        })
+        .finally(() => {
+          setLocationLoading(false);
+        });
+    }
+  }, [role, userData, available]);
 
   // Donor: Add donation
   const handleChange = (e) => {
@@ -65,8 +120,15 @@ export default function DashboardPage() {
   const handleClaim = (item) => {
     setClaimed([{ id: Date.now(), donor: item.donor, type: item.type, amount: item.amount, date: new Date().toISOString().slice(0, 10) }, ...claimed]);
     setAvailable(available.filter((a) => a.id !== item.id));
+    setNearbyDonors(nearbyDonors.filter((a) => a.id !== item.id));
     setShowModal(false);
     setSelectedPin(null);
+  };
+
+  // Handle donor click from map
+  const handleDonorClick = (donor) => {
+    setSelectedPin(donor);
+    setShowModal(true);
   };
 
   if (!role) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
@@ -135,21 +197,32 @@ export default function DashboardPage() {
       ) : (
         <div className="w-full max-w-2xl">
           <h2 className="text-xl font-semibold mb-2">Claimant Dashboard</h2>
-          {/* Map Placeholder */}
-          <div className="w-full h-64 bg-blue-100 flex items-center justify-center rounded mb-4 relative">
-            {/* Pins (mocked as clickable dots) */}
-            {available.map((item, idx) => (
-              <button
-                key={item.id}
-                className="absolute"
-                style={{ left: `${30 + idx * 30}%`, top: `${40 + idx * 10}%` }}
-                onClick={() => { setSelectedPin(item); setShowModal(true); }}
-                title={item.type}
-              >
-                <span className="w-5 h-5 bg-green-600 rounded-full inline-block border-2 border-white shadow-lg" />
-              </button>
-            ))}
-            <span className="text-gray-500">[Map Placeholder]</span>
+          
+          {/* Location Status */}
+          {locationLoading && (
+            <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded mb-4">
+              Getting your location from your address...
+            </div>
+          )}
+          
+          {locationError && (
+            <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4">
+              <strong>Location Error:</strong> {locationError}. Showing all available donors.
+            </div>
+          )}
+          
+          {/* Google Maps */}
+          <div className="mb-4">
+            <GoogleMap 
+              donors={nearbyDonors}
+              onDonorClick={handleDonorClick}
+              userLocation={userLocation}
+            />
+          </div>
+          
+          {/* Nearby Donors Count */}
+          <div className="text-sm text-gray-600 mb-4">
+            Showing {nearbyDonors.length} donor(s) within 10km of your location
           </div>
           {/* Modal for pin details and claim */}
           {showModal && selectedPin && (
