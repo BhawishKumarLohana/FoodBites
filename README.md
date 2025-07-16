@@ -1,4 +1,4 @@
-# FoodBites – Fighting Food Waste, One Bite at a Time
+# FoodBites 
 
 ## Inspiration
 
@@ -35,16 +35,14 @@ Geospatial queries allow NGOs and donors to connect based on proximity, enabling
 
 Below are a few images showcasing the core features and UI of FoodBites:
 
-![Homepage – Browse Donations](./screenshots/homepage.png)  
-*Homepage where NGOs can view available food donations nearby*
+![Homepage – Browse Donations](./screenshots/Screenshot 2025-07-13 203104.png)  
 
-![Donation Form](./screenshots/donation-form.png)  
-*Form to submit surplus food details*
+![Donation Form](./screenshots/Screenshot 2025-07-13 203132.png)  
 
-![Interactive Map View](./screenshots/map-view.png)  
-*Google Maps integration showing nearby food sources*
+![Interactive Map View](./screenshots/Screenshot 2025-07-13 203155.png)  
 
-> _Please place screenshots inside a `screenshots/` folder in the repo root._
+![ Map View](./screenshots/WhatsApp Image 2025-07-13 at 19.24.02_125c785e.jpg)  
+
 
 ## Challenges We Faced
 
