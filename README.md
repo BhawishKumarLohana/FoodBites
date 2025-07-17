@@ -68,23 +68,6 @@ Understand real-world problems and design technical solutions around them
 Collaborate under high pressure with limited time  
 Build a user-friendly, scalable web app with real-time functionality  
 
-## What’s Next
-
-We aim to take FoodBites beyond the demo stage. Our roadmap includes:
-
-Making the platform production-ready and hosting it publicly  
-Adding real-time notifications for food status updates  
-Introducing mobile-first design for wider accessibility  
-Implementing food freshness indicators, trust ratings, and expiration timers  
-Exploring Progressive Web App (PWA) support for low-connectivity regions  
-
-## Built With
-
-Next.js  
-TailwindCSS  
-MySQL  
-Prisma ORM  
-Google Maps API  
 
 ## Judge Feedback Highlights
 
