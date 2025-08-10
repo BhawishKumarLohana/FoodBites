@@ -36,6 +36,34 @@ const TEAM_MEMBERS = [
   { name: "Habibul Bashar", fact: "I can’t tie shoelaces." },
 ];
 
+// variants (keep these outside the component file-scope)
+const container = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {  duration:2,staggerChildren: 0.12, delayChildren: 0.1 }
+  }
+};
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration:2, ease: [0.22, 1, 0.36, 1] }
+  }
+};
+
+const pop = {
+  hidden: { opacity: 0, scale: 0.96, y: 10 },
+  show: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    transition: {  duration:2,type: "spring", stiffness: 120, damping: 16 }
+  }
+};
+
 export default function Home() {
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -48,105 +76,229 @@ export default function Home() {
     };
   }, []);
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="flex flex-col bg-gray-50 mt-0 px-0 py-0">
       {/* Hero Section */}
-      <section className="relative flex flex-col items-center justify-center text-center px-4 py-20 bg-gradient-to-br from-green-100 to-blue-100">
-        <div className="absolute inset-0 w-full h-full z-0">
-          <Image
-            src="/food-NGO.jpg"
-            alt="FoodBites Hero"
-            fill
-            className="object-cover opacity-30"
-            priority
-          />
-        </div>
-        <div className="relative z-10 max-w-2xl mx-auto">
-          <h1 className="text-5xl sm:text-6xl font-extrabold mb-4 text-green-800 drop-shadow-lg">FoodBites</h1>
-          <p className="text-2xl sm:text-3xl text-gray-800 font-medium mb-6 drop-shadow">Waste Less, Feed More</p>
-          <p className="text-lg sm:text-xl text-gray-700 mb-8">Bridging the gap between food donors and those in need. Join us in reducing food waste and feeding communities in real time.</p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-4">
-            <motion.a
-              href="/signup"
-              whileHover={{ scale: 1.07, boxShadow: "0 8px 32px rgba(16, 185, 129, 0.25)" }}
-              whileTap={{ scale: 0.96 }}
-              className="bg-green-600 hover:bg-green-700 text-white font-semibold px-8 py-4 rounded shadow text-lg transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-green-300 cursor-pointer"
-              style={{ display: 'inline-block' }}
-            >
-              I am donating food
-            </motion.a>
-            <motion.a
-              href="/signup"
-              whileHover={{ scale: 1.07, boxShadow: "0 8px 32px rgba(59, 130, 246, 0.25)" }}
-              whileTap={{ scale: 0.96 }}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-4 rounded shadow text-lg transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-300 cursor-pointer"
-              style={{ display: 'inline-block' }}
-            >
-              I am claiming food
-            </motion.a>
-          </div>
-          <Link href="#impact" className="inline-block mt-2 text-green-700 underline font-semibold">Learn More ↓</Link>
-        </div>
-      </section>
+     <section className="relative w-full h-screen flex flex-col items-center justify-center text-center px-4 bg-gradient-to-br from-green-100 to-blue-100 overflow-hidden">
+  {/* Background Image */}
+  <div className="absolute inset-0">
+    <Image
+      src="/food-NGO.jpg"
+      alt="FoodBites Hero"
+      fill
+      className="object-cover opacity-30"
+      priority
+    />
+  </div>
 
-      {/* Impact Stats */}
-      <motion.section
-        id="impact"
-        className="py-16 bg-white flex flex-col items-center"
-        initial={{ opacity: 0, y: 40 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7 }}
-        viewport={{ amount: 0.3 }}
+  {/* Content */}
+  <div className="relative z-10 max-w-2xl mx-auto py-20">
+
+
+    {/* Buttons */}
+    <div className="flex flex-col sm:flex-row gap-4 justify-center mb-4">
+       <motion.div
+      className="relative z-10 max-w-2xl mx-auto py-20"
+      variants={container}
+      initial="hidden"
+      animate="show"
+    >
+      <motion.h1
+        className="text-5xl sm:text-6xl font-extrabold mb-4 text-green-800 drop-shadow-lg"
+        variants={pop}
       >
-        <h2 className="text-3xl font-bold mb-8 text-green-800">Our Impact (So Far)</h2>
-        <p className="mb-8 text-lg text-gray-700 text-center">Globally, around 300 million tons of food is wasted every year.</p>
-        <div className="flex flex-wrap gap-8 justify-center">
-          {/* Meals Donated */}
-          {(() => {
-            const [replayKey1, setReplayKey1] = useState(0);
-            return (
-              <div
-                className="bg-green-100 rounded-2xl p-6 shadow-xl text-center min-w-[160px] transition-all duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer group border-2 border-transparent hover:border-green-300"
-                onMouseEnter={() => setReplayKey1((k) => k + 1)}
-              >
-                <div className="text-4xl font-extrabold text-green-700 mb-2 transition-colors duration-300 group-hover:text-green-900">
-                  <AnimatedNumber value={1200} suffix="+" duration={700} replayKey={replayKey1} />
-                </div>
-                <div className="text-gray-700">Meals Donated</div>
+        FoodBites
+      </motion.h1>
+
+      <motion.p
+        className="text-2xl sm:text-3xl text-gray-800 font-medium mb-2 drop-shadow"
+        variants={fadeUp}
+      >
+        Waste Less, Feed More
+      </motion.p>
+
+      <motion.p
+        className="text-lg sm:text-xl text-gray-700 mb-8"
+        variants={fadeUp}
+      >
+        Bridging the gap between food donors and those in need. Join us in
+        reducing food waste and feeding communities in real time.
+      </motion.p>
+
+      {/* Buttons */}
+      <motion.div
+        className="flex flex-col sm:flex-row gap-4 justify-center mb-4"
+        variants={fadeUp}
+      >
+        <motion.a
+          href="/signup"
+          whileHover={{
+            scale: 1.07,
+            boxShadow: "0 8px 32px rgba(16, 185, 129, 0.25)",
+            y: -2
+          }}
+          whileTap={{ scale: 0.96, y: 0 }}
+          className="bg-green-600 hover:bg-green-700 text-white font-semibold px-8 py-4 rounded shadow text-lg transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-green-300 cursor-pointer"
+        >
+          I am donating food
+        </motion.a>
+
+        <motion.a
+          href="/signup"
+          whileHover={{
+            scale: 1.07,
+            boxShadow: "0 8px 32px rgba(59, 130, 246, 0.25)",
+            y: -2
+          }}
+          whileTap={{ scale: 0.96, y: 0 }}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-4 rounded shadow text-lg transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-300 cursor-pointer"
+        >
+          I am claiming food
+        </motion.a>
+      </motion.div>
+
+      <motion.div variants={fadeUp}>
+        <a
+          href="#impact"
+          className="inline-block mt-2 text-green-700 underline font-semibold"
+        >
+          <motion.span
+            whileHover={{ x: 2 }}
+            transition={{ type: "tween", duration: 0.15 }}
+          >
+            Learn More ↓
+          </motion.span>
+        </a>
+      </motion.div>
+    </motion.div>
+    </div>
+
+   
+  </div>
+</section>
+
+
+    {/* Impact Section  */}
+<motion.section
+  id="impact"
+  className="py-16 bg-green-100"
+  initial={{ opacity: 0, y: 40 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 2 }}
+>
+  <div className="max-w-full max-h-full px-20 grid grid-rows-3 grid-cols-1 md:grid-cols-[0.4fr_0.6fr] gap-10 items-center"> {/* do not change */}
+
+    {/* Left Column (40%) — span all 3 rows on md+ */}
+    <div className="md:col-start-1 md:row-span-3 self-center w-full">
+      <h2 className="text-4xl sm:text-5xl font-extrabold text-green-900 mb-4">
+        Our Impact
+      </h2>
+      <p className="text-xl sm:text-2xl text-green-800 font-semibold">
+        Saving billions of lives...
+      </p>
+      <p className="mt-4 text-base sm:text-lg text-green-900/80">
+        We’re bridging donors and communities—turning surplus into sustenance.
+        Every connection reduces waste and feeds people who need it most.
+      </p>
+    </div>
+
+    {/* Right Column (60%) — graph-like bars that always fit the column */}
+    <div className="md:col-start-2 md:row-span-3 w-full flex flex-col gap-6 justify-center">
+
+      {/* Meals Donated (bar ~ 60%) */}
+      {(() => {
+        const [replayKey1, setReplayKey1] = useState(0);
+        const targetPct = 60; // adjust visual share
+        return (
+          <div
+            className="w-full bg-green-50 rounded-2xl p-5 shadow-xl border border-green-200 hover:shadow-2xl transition-shadow cursor-pointer"
+            onMouseEnter={() => setReplayKey1(k => k + 1)}
+          >
+            <div className="flex items-end justify-between mb-3">
+              <div className="text-sm font-medium text-green-900/80">Meals Donated</div>
+              <div className="text-3xl font-extrabold text-green-700">
+                <AnimatedNumber value={1200} suffix="+" duration={700} replayKey={replayKey1} />
               </div>
-            );
-          })()}
-          {/* NGOs/Shelters Helped */}
-          {(() => {
-            const [replayKey2, setReplayKey2] = useState(0);
-            return (
-              <div
-                className="bg-blue-100 rounded-2xl p-6 shadow-xl text-center min-w-[160px] transition-all duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer group border-2 border-transparent hover:border-blue-300"
-                onMouseEnter={() => setReplayKey2((k) => k + 1)}
-              >
-                <div className="text-4xl font-extrabold text-blue-700 mb-2 transition-colors duration-300 group-hover:text-blue-900">
-                  <AnimatedNumber value={30} suffix="+" duration={700} replayKey={replayKey2} />
-                </div>
-                <div className="text-gray-700">NGOs/Shelters Helped</div>
+            </div>
+
+            {/* Track */}
+            <div className="w-full h-4 rounded-full bg-green-200/60 overflow-hidden">
+              <motion.div
+                key={replayKey1}
+                initial={{ width: 0 }}
+                animate={{ width: `${targetPct}%` }}
+                transition={{ duration: 0.8 }}
+                className="h-full bg-green-500"
+              />
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* NGOs/Shelters Helped (bar ~ 35%) */}
+      {(() => {
+        const [replayKey2, setReplayKey2] = useState(0);
+        const targetPct = 35;
+        return (
+          <div
+            className="w-full bg-blue-50 rounded-2xl p-5 shadow-xl border border-blue-200 hover:shadow-2xl transition-shadow cursor-pointer"
+            onMouseEnter={() => setReplayKey2(k => k + 1)}
+          >
+            <div className="flex items-end justify-between mb-3">
+              <div className="text-sm font-medium text-blue-900/80">NGOs/Shelters Helped</div>
+              <div className="text-3xl font-extrabold text-blue-700">
+                <AnimatedNumber value={30} suffix="+" duration={700} replayKey={replayKey2} />
               </div>
-            );
-          })()}
-          {/* Food Saved */}
-          {(() => {
-            const [replayKey3, setReplayKey3] = useState(0);
-            return (
-              <div
-                className="bg-yellow-100 rounded-2xl p-6 shadow-xl text-center min-w-[160px] transition-all duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer group border-2 border-transparent hover:border-yellow-300"
-                onMouseEnter={() => setReplayKey3((k) => k + 1)}
-              >
-                <div className="text-4xl font-extrabold text-yellow-700 mb-2 transition-colors duration-300 group-hover:text-yellow-900">
-                  <AnimatedNumber value={5000} suffix="kg" duration={700} replayKey={replayKey3} />
-                </div>
-                <div className="text-gray-700">Food Saved</div>
+            </div>
+
+            {/* Track */}
+            <div className="w-full h-4 rounded-full bg-blue-200/60 overflow-hidden">
+              <motion.div
+                key={replayKey2}
+                initial={{ width: 0 }}
+                animate={{ width: `${targetPct}%` }}
+                transition={{ duration: 0.8 }}
+                className="h-full bg-blue-500"
+              />
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Food Saved (bar ~ 80%) */}
+      {(() => {
+        const [replayKey3, setReplayKey3] = useState(0);
+        const targetPct = 80;
+        return (
+          <div
+            className="w-full bg-yellow-50 rounded-2xl p-5 shadow-xl border border-yellow-200 hover:shadow-2xl transition-shadow cursor-pointer"
+            onMouseEnter={() => setReplayKey3(k => k + 1)}
+          >
+            <div className="flex items-end justify-between mb-3">
+              <div className="text-sm font-medium text-yellow-900/80">Food Saved</div>
+              <div className="text-3xl font-extrabold text-yellow-700">
+                <AnimatedNumber value={5000} suffix="kg" duration={700} replayKey={replayKey3} />
               </div>
-            );
-          })()}
-        </div>
-      </motion.section>
+            </div>
+
+            {/* Track */}
+            <div className="w-full h-4 rounded-full bg-yellow-200/60 overflow-hidden">
+              <motion.div
+                key={replayKey3}
+                initial={{ width: 0 }}
+                animate={{ width: `${targetPct}%` }}
+                transition={{ duration: 0.8 }}
+                className="h-full bg-yellow-500"
+              />
+            </div>
+          </div>
+        );
+      })()}
+
+    </div>
+  </div>
+</motion.section>
+
+
 
       {/* How It Works */}
       <motion.section
