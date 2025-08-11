@@ -1,5 +1,5 @@
 // app/lib/prisma.js
-import { PrismaClient } from '@/generated/prisma/client'
+import { PrismaClient } from '@/generated/prisma'
 let prisma;
 
 if (global.prisma) {

@@ -4,6 +4,7 @@ import { getToken, decodeToken, removeToken } from "../../jwt";
 import { useRouter } from "next/navigation";
 import GoogleMap from "../components/GoogleMap";
 import { getUserLocation, filterDonorsByDistance, getCoordsFromAddress } from "../utils/location";
+import ClientOnly from "../components/ClientOnly";
 
 
 
@@ -354,31 +355,37 @@ export default function DashboardPage() {
 
     <div>
       <h3 className="text-xl font-semibold text-gray-800 mb-4">Previous Donations</h3>
-      <div className="grid sm:grid-cols-2 gap-4">
-        {donations.map((d) => (
-          <div key={d.id} className="bg-white p-4 rounded-lg shadow border border-gray-200">
-            <div className="flex justify-between items-center mb-2">
-              <h4 className="text-md font-bold text-green-700">{d.title}</h4>
-              <span
-                className={`text-xs px-2 py-1 rounded-full border ${
-                  d.isDelivery
-                    ? 'bg-blue-100 text-blue-700 border-blue-300'
-                    : 'bg-yellow-100 text-yellow-700 border-yellow-300'
-                }`}
-              >
-                {d.isDelivery ? 'Delivery' : 'Pickup'}
-              </span>
+      <ClientOnly fallback={<div className="grid sm:grid-cols-2 gap-4"><div className="bg-gray-100 p-4 rounded-lg animate-pulse">Loading...</div></div>}>
+        <div className="grid sm:grid-cols-2 gap-4">
+          {donations && donations.length > 0 ? donations.map((d) => (
+            <div key={d.foodId} className="bg-white p-4 rounded-lg shadow border border-gray-200">
+              <div className="flex justify-between items-center mb-2">
+                <h4 className="text-md font-bold text-green-700">{d.title}</h4>
+                <span
+                  className={`text-xs px-2 py-1 rounded-full border ${
+                    d.isDelivery
+                      ? 'bg-blue-100 text-blue-700 border-blue-300'
+                      : 'bg-yellow-100 text-yellow-700 border-yellow-300'
+                  }`}
+                >
+                  {d.isDelivery ? 'Delivery' : 'Pickup'}
+                </span>
+              </div>
+              <div className="text-sm text-gray-600 mb-1">
+                <span className="font-medium">Quantity:</span> {d.quantity}
+              </div>
+              <div className="text-sm text-gray-600 mb-1">
+                <span className="font-medium">Deadline:</span>{" "}
+                {d.deadline ? new Date(d.deadline).toLocaleString() : "-"}
+              </div>
             </div>
-            <div className="text-sm text-gray-600 mb-1">
-              <span className="font-medium">Quantity:</span> {d.quantity}
+          )) : (
+            <div className="col-span-2 text-center text-gray-500 py-8">
+              No donations found
             </div>
-            <div className="text-sm text-gray-600 mb-1">
-              <span className="font-medium">Deadline:</span>{" "}
-              {d.deadline ? new Date(d.deadline).toLocaleString() : "-"}
-            </div>
-          </div>
-        ))}
-      </div>
+          )}
+        </div>
+      </ClientOnly>
     </div>
   </div>
 </div>
@@ -403,11 +410,13 @@ export default function DashboardPage() {
           
           {/* Google Maps */}
           <div className="mb-4">
-            <GoogleMap 
-              donors={nearbyDonors}
-              onDonorClick={handleDonorClick}
-              userLocation={userLocation}
-            />
+            <ClientOnly fallback={<div className="bg-gray-100 p-8 rounded-lg animate-pulse text-center">Loading map...</div>}>
+              <GoogleMap 
+                donors={nearbyDonors}
+                onDonorClick={handleDonorClick}
+                userLocation={userLocation}
+              />
+            </ClientOnly>
           </div>
           
           {/* Nearby Donors Count */}
@@ -415,23 +424,26 @@ export default function DashboardPage() {
             Showing {nearbyDonors.length} donor(s) within 10km of your location
           </div>
           {/* Modal for pin details and claim */}
-          {showModal && selectedPin && (
-            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
-              <div className="bg-white p-6 rounded shadow-lg w-80 relative">
-                <button className="absolute top-2 right-2 text-gray-400" onClick={() => setShowModal(false)}>&times;</button>
-                <h3 className="text-lg font-bold mb-2">Available Food</h3>
-                <div className="mb-2"><strong>Donor:</strong> {selectedPin.donor}</div>
-                <div className="mb-2"><strong>Type:</strong> {selectedPin.type}</div>
-                <div className="mb-2"><strong>Amount:</strong> {selectedPin.amount}</div>
-                <div className="mb-2"><strong>Pickup Window:</strong> {selectedPin.pickup}</div>
-                <div className="mb-2"><strong>Location:</strong> {selectedPin.location}</div>
-                <button className="w-full bg-green-600 text-white p-2 rounded mt-2" onClick={() => handleClaim(selectedPin)}>Claim Food</button>
+          <ClientOnly fallback={null}>
+            {showModal && selectedPin && (
+              <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+                <div className="bg-white p-6 rounded shadow-lg w-80 relative">
+                  <button className="absolute top-2 right-2 text-gray-400" onClick={() => setShowModal(false)}>&times;</button>
+                  <h3 className="text-lg font-bold mb-2">Available Food</h3>
+                  <div className="mb-2"><strong>Donor:</strong> {selectedPin.donor}</div>
+                  <div className="mb-2"><strong>Type:</strong> {selectedPin.type}</div>
+                  <div className="mb-2"><strong>Amount:</strong> {selectedPin.amount}</div>
+                  <div className="mb-2"><strong>Pickup Window:</strong> {selectedPin.pickup}</div>
+                  <div className="mb-2"><strong>Location:</strong> {selectedPin.location}</div>
+                  <button className="w-full bg-green-600 text-white p-2 rounded mt-2" onClick={() => handleClaim(selectedPin)}>Claim Food</button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </ClientOnly>
          <h3 className="text-xl font-semibold mb-4 text-gray-800">Available Food Donations</h3>
+<ClientOnly fallback={<div className="grid gap-4"><div className="bg-gray-100 p-4 rounded-lg animate-pulse">Loading...</div></div>}>
 <div className="grid gap-4">
-  {claimed.map((item) => (
+  {claimed && claimed.length > 0 ? claimed.map((item) => (
     <div
       key={item.foodId}
       className="bg-white rounded-lg shadow-md p-4 border border-gray-200 transition hover:shadow-lg"
@@ -498,116 +510,122 @@ export default function DashboardPage() {
 
       </div>
     </div>
-  ))}
+  )) : (
+    <div className="text-center text-gray-500 py-8">
+      No available food donations found
+    </div>
+  )}
 </div>
+</ClientOnly>
 
 
         </div>
       )}
-      {showModal && selectedFood && (
-  <div
-    className="absolute z-50 w-96 max-w-full"
-    style={{
-      top: modalPos.y + 10, // offset to avoid overlapping the button
-      left: modalPos.x,
-    }}
-  >
-    <div className="bg-white border border-gray-200 shadow-xl rounded-xl p-6 relative">
-      <button
-        className="absolute top-3 right-4 text-gray-400 hover:text-gray-700 text-xl"
-        onClick={() => setShowModal(false)}
-      >
-        ×
-      </button>
+      <ClientOnly fallback={null}>
+        {showModal && selectedFood && (
+          <div
+            className="absolute z-50 w-96 max-w-full"
+            style={{
+              top: modalPos.y + 10, // offset to avoid overlapping the button
+              left: modalPos.x,
+            }}
+          >
+            <div className="bg-white border border-gray-200 shadow-xl rounded-xl p-6 relative">
+              <button
+                className="absolute top-3 right-4 text-gray-400 hover:text-gray-700 text-xl"
+                onClick={() => setShowModal(false)}
+              >
+                ×
+              </button>
 
-      <h2 className="text-xl font-bold text-green-700 mb-3">
-        {selectedFood.title}
-      </h2>
+              <h2 className="text-xl font-bold text-green-700 mb-3">
+                {selectedFood.title}
+              </h2>
 
-      <div className="text-sm text-gray-700 space-y-2">
-        <p><strong>Quantity:</strong> {selectedFood.quantity}</p>
-        <p><strong>Type:</strong> {selectedFood.isDelivery ? "Delivery" : "Pickup"}</p>
-        <p><strong>Deadline:</strong> {new Date(selectedFood.deadline).toLocaleString()}</p>
-        <hr className="my-2" />
-        <p className="font-semibold">Donor Info:</p>
-        <p>{selectedFood.user?.email}</p>
-        <p>{selectedFood.user?.primary_PhoneN}</p>
-        <p>{selectedFood.user?.address}, {selectedFood.user?.city}, {selectedFood.user?.country}</p>
-      </div>
+              <div className="text-sm text-gray-700 space-y-2">
+                <p><strong>Quantity:</strong> {selectedFood.quantity}</p>
+                <p><strong>Type:</strong> {selectedFood.isDelivery ? "Delivery" : "Pickup"}</p>
+                <p><strong>Deadline:</strong> {new Date(selectedFood.deadline).toLocaleString()}</p>
+                <hr className="my-2" />
+                <p className="font-semibold">Donor Info:</p>
+                <p>{selectedFood.user?.email}</p>
+                <p>{selectedFood.user?.primary_PhoneN}</p>
+                <p>{selectedFood.user?.address}, {selectedFood.user?.city}, {selectedFood.user?.country}</p>
+              </div>
 
-      <div className="flex justify-end mt-4">
-        <button
-          onClick={() => setShowModal(false)}
-          className="bg-gray-100 text-gray-800 px-3 py-1 rounded hover:bg-gray-200 transition"
-        >
-          Close
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+              <div className="flex justify-end mt-4">
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="bg-gray-100 text-gray-800 px-3 py-1 rounded hover:bg-gray-200 transition"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </ClientOnly>
 
-{claimModalOpen && selectedFood && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm transition">
-    <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 mx-4 sm:mx-0">
-      <h2 className="text-xl font-bold text-green-700 mb-4">Confirm Claim</h2>
+      <ClientOnly fallback={null}>
+        {claimModalOpen && selectedFood && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm transition">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 mx-4 sm:mx-0">
+              <h2 className="text-xl font-bold text-green-700 mb-4">Confirm Claim</h2>
 
-      <div className="mb-4">
-        <label className="block text-sm font-semibold text-gray-700 mb-1">Claim Status</label>
-        <select
-          value={claimForm.status}
-          onChange={(e) => setClaimForm({ ...claimForm, status: e.target.value })}
-          className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
-        >
-          <option value="PENDING">Pending</option>
-          <option value="COMPLETE">Complete</option>
-        </select>
-      </div>
+              <div className="mb-4">
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Claim Status</label>
+                <select
+                  value={claimForm.status}
+                  onChange={(e) => setClaimForm({ ...claimForm, status: e.target.value })}
+                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
+                >
+                  <option value="PENDING">Pending</option>
+                  <option value="COMPLETE">Complete</option>
+                </select>
+              </div>
 
-      <div className="mb-4">
-        <label className="block text-sm font-semibold text-gray-700 mb-1">Special Instructions</label>
-        <textarea
-          rows={4}
-          placeholder="Add any special instructions for the donor..."
-          value={claimForm.specialInstruction}
-          onChange={(e) =>
-            setClaimForm({ ...claimForm, specialInstruction: e.target.value })
-          }
-          className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
-        />
-      </div>
+              <div className="mb-4">
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Special Instructions</label>
+                <textarea
+                  rows={4}
+                  placeholder="Add any special instructions for the donor..."
+                  value={claimForm.specialInstruction}
+                  onChange={(e) =>
+                    setClaimForm({ ...claimForm, specialInstruction: e.target.value })
+                  }
+                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                />
+              </div>
 
-      <div className="flex justify-end space-x-3">
-        <button
-          onClick={() => {
-            setClaimModalOpen(false);
-            setClaimForm({ status: "PENDING", specialInstruction: "" });
-            setSelectedFood(null);
-          }}
-          className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition text-sm"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={() => {
-            handleClaim({
-              ...selectedFood,
-              status: claimForm.status,
-              specialInstruction: claimForm.specialInstruction,
-            });
-            
-          }}
-          className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition text-sm"
-        >
-          Confirm Claim
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
-
-
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => {
+                    setClaimModalOpen(false);
+                    setClaimForm({ status: "PENDING", specialInstruction: "" });
+                    setSelectedFood(null);
+                  }}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    handleClaim({
+                      ...selectedFood,
+                      status: claimForm.status,
+                      specialInstruction: claimForm.specialInstruction,
+                    });
+                    
+                  }}
+                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition text-sm"
+                >
+                  Confirm Claim
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </ClientOnly>
     </div>
   );
 } 

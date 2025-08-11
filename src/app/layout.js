@@ -9,7 +9,7 @@ const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono"
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>
+      <body suppressHydrationWarning={true}>
         <AuthProvider>
           <NavBar />
           {children}
