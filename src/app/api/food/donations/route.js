@@ -20,6 +20,25 @@ export async function GET(req) {
       where: {
         DonatedBy: userId,
       },
+      include: {
+        foodclaim: {
+          include: {
+            org: {
+              include: {
+                user: {
+                  select: {
+                    email: true,
+                    primary_PhoneN: true,
+                    address: true,
+                    city: true,
+                    country: true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
     });
     console.log(donations);
 

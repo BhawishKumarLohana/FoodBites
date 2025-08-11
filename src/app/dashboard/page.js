@@ -13,6 +13,8 @@ export default function DashboardPage() {
   const [role, setRole] = useState(null);
   const [userData, setUserData] = useState(null);
   const [donations, setDonations] = useState([]);
+  const [filteredDonations, setFilteredDonations] = useState([]);
+  const [donationFilter, setDonationFilter] = useState('all');
   const [form, setForm] = useState({ title: "", amount: "", deadline: "", isDelivery:"" });
   const [available, setAvailable] = useState([]);
   const [claimed, setClaimed] = useState([]);
@@ -35,6 +37,22 @@ export default function DashboardPage() {
 
 
   const router = useRouter();
+
+  // Helper function to format relative time
+  const getRelativeTime = (date) => {
+    const now = new Date();
+    const diffInMs = now - new Date(date);
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInDays = Math.floor(diffInHours / 24);
+    
+    if (diffInDays > 0) {
+      return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+    } else if (diffInHours > 0) {
+      return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+    } else {
+      return 'Just now';
+    }
+  };
 
   const fetchUserData = async (userId, token) => {
     try {
@@ -95,6 +113,7 @@ export default function DashboardPage() {
       console.log("DATA" + data);
       if (res.ok) {
         setDonations(data);
+        setFilteredDonations(data); // Initialize filtered donations
       } else {
         console.error(data.error);
       }
@@ -107,6 +126,17 @@ export default function DashboardPage() {
   fetchUnclaimed();
 
   }, [router]);
+
+  // Handle donation filtering
+  useEffect(() => {
+    if (donationFilter === 'all') {
+      setFilteredDonations(donations);
+    } else if (donationFilter === 'claimed') {
+      setFilteredDonations(donations.filter(d => d.foodclaim && d.foodclaim.length > 0));
+    } else if (donationFilter === 'unclaimed') {
+      setFilteredDonations(donations.filter(d => !d.foodclaim || d.foodclaim.length === 0));
+    }
+  }, [donations, donationFilter]);
 
   // Get user location for claimants
   useEffect(() => {
@@ -355,21 +385,84 @@ export default function DashboardPage() {
 
     <div>
       <h3 className="text-xl font-semibold text-gray-800 mb-4">Previous Donations</h3>
+      
+      {/* Summary Stats */}
+      <div className="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white p-4 rounded-lg shadow border border-gray-200 text-center">
+          <div className="text-2xl font-bold text-gray-800">{donations?.length || 0}</div>
+          <div className="text-sm text-gray-600">Total Donations</div>
+        </div>
+        <div className="bg-white p-4 rounded-lg shadow border border-gray-200 text-center">
+          <div className="text-2xl font-bold text-green-600">
+            {donations?.filter(d => d.foodclaim && d.foodclaim.length > 0).length || 0}
+          </div>
+          <div className="text-sm text-gray-600">Claimed</div>
+        </div>
+        <div className="bg-white p-4 rounded-lg shadow border border-gray-200 text-center">
+          <div className="text-2xl font-bold text-gray-600">
+            {donations?.filter(d => !d.foodclaim || d.foodclaim.length === 0).length || 0}
+          </div>
+          <div className="text-sm text-gray-600">Unclaimed</div>
+        </div>
+      </div>
+      
+      {/* Filter Options */}
+      <div className="mb-4 flex justify-between items-center">
+        <div className="text-sm text-gray-600">
+          Showing {filteredDonations?.length || 0} of {donations?.length || 0} donations
+        </div>
+        <div className="flex items-center gap-2">
+          {donationFilter !== 'all' && (
+            <button
+              onClick={() => setDonationFilter('all')}
+              className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 underline"
+            >
+              Reset Filter
+            </button>
+          )}
+          <select
+            value={donationFilter}
+            onChange={(e) => {
+              setDonationFilter(e.target.value);
+            }}
+            className="px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-green-400 text-sm"
+          >
+            <option value="all">All Donations</option>
+            <option value="claimed">Claimed Only</option>
+            <option value="unclaimed">Unclaimed Only</option>
+          </select>
+        </div>
+      </div>
+      
       <ClientOnly fallback={<div className="grid sm:grid-cols-2 gap-4"><div className="bg-gray-100 p-4 rounded-lg animate-pulse">Loading...</div></div>}>
         <div className="grid sm:grid-cols-2 gap-4">
-          {donations && donations.length > 0 ? donations.map((d) => (
-            <div key={d.foodId} className="bg-white p-4 rounded-lg shadow border border-gray-200">
-              <div className="flex justify-between items-center mb-2">
+          {filteredDonations && filteredDonations.length > 0 ? filteredDonations.map((d) => (
+            <div key={d.foodId} className={`p-4 rounded-lg shadow border ${
+              d.foodclaim && d.foodclaim.length > 0 
+                ? 'bg-white border-green-200' 
+                : 'bg-white border-gray-200'
+            }`}>
+              {/* Claim Status Badge */}
+              <div className="flex justify-between items-start mb-2">
                 <h4 className="text-md font-bold text-green-700">{d.title}</h4>
-                <span
-                  className={`text-xs px-2 py-1 rounded-full border ${
-                    d.isDelivery
-                      ? 'bg-blue-100 text-blue-700 border-blue-300'
-                      : 'bg-yellow-100 text-yellow-700 border-yellow-300'
-                  }`}
-                >
-                  {d.isDelivery ? 'Delivery' : 'Pickup'}
-                </span>
+                <div className="flex flex-col items-end gap-1">
+                  <span
+                    className={`text-xs px-2 py-1 rounded-full border ${
+                      d.isDelivery
+                        ? 'bg-blue-100 text-blue-700 border-blue-300'
+                        : 'bg-yellow-100 text-yellow-700 border-yellow-300'
+                    }`}
+                  >
+                    {d.isDelivery ? 'Delivery' : 'Pickup'}
+                  </span>
+                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                    d.foodclaim && d.foodclaim.length > 0
+                      ? 'bg-green-100 text-green-700 border border-green-300'
+                      : 'bg-gray-100 text-gray-600 border border-gray-300'
+                  }`}>
+                    {d.foodclaim && d.foodclaim.length > 0 ? '✓ Claimed' : '○ Available'}
+                  </span>
+                </div>
               </div>
               <div className="text-sm text-gray-600 mb-1">
                 <span className="font-medium">Quantity:</span> {d.quantity}
@@ -378,10 +471,99 @@ export default function DashboardPage() {
                 <span className="font-medium">Deadline:</span>{" "}
                 {d.deadline ? new Date(d.deadline).toLocaleString() : "-"}
               </div>
+              
+              {/* Claim Status */}
+              <div className="mt-3 pt-3 border-t border-gray-100">
+                {d.foodclaim && d.foodclaim.length > 0 ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                        d.foodclaim[0].status === 'COMPLETE' 
+                          ? 'bg-blue-100 text-blue-800' 
+                          : 'bg-orange-100 text-orange-800'
+                      }`}>
+                        {d.foodclaim[0].status === 'COMPLETE' ? 'Completed' : 'Pending'}
+                      </span>
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      <span className="font-medium">Claimed by:</span> {d.foodclaim[0].org?.user?.email || 'Unknown Organization'}
+                      {d.foodclaim[0].org?.type && (
+                        <span className="text-gray-400 ml-1">({d.foodclaim[0].org.type})</span>
+                      )}
+                    </div>
+                    {d.foodclaim[0].org?.orgName && (
+                      <div className="text-xs text-gray-600">
+                        <span className="font-medium">Organization:</span> {d.foodclaim[0].org.orgName}
+                      </div>
+                    )}
+                    {d.foodclaim[0].org?.regNumber && (
+                      <div className="text-xs text-gray-600">
+                        <span className="font-medium">Reg. Number:</span> {d.foodclaim[0].org.regNumber}
+                      </div>
+                    )}
+                    {d.foodclaim[0].org?.description && (
+                      <div className="text-xs text-gray-600">
+                        <span className="font-medium">Description:</span> {d.foodclaim[0].org.description}
+                      </div>
+                    )}
+                    {d.foodclaim[0].org?.openTime && d.foodclaim[0].org?.closeTime && (
+                      <div className="text-xs text-gray-600">
+                        <span className="font-medium">Hours:</span> {d.foodclaim[0].org.openTime} - {d.foodclaim[0].org.closeTime}
+                      </div>
+                    )}
+                    {d.foodclaim[0].org?.user?.individualDonor?.fullName && (
+                      <div className="text-xs text-gray-600">
+                        <span className="font-medium">Donor Name:</span> {d.foodclaim[0].org.user.individualDonor.fullName}
+                      </div>
+                    )}
+                    {d.foodclaim[0].org?.user?.individualDonor?.idcard && (
+                      <div className="text-xs text-gray-600">
+                        <span className="font-medium">ID Card:</span> {d.foodclaim[0].org.user.individualDonor.idcard}
+                      </div>
+                    )}
+                    {d.foodclaim[0].org?.user?.restaurant?.ResName && (
+                      <div className="text-xs text-gray-600">
+                        <span className="font-medium">Restaurant:</span> {d.foodclaim[0].org.user.restaurant.ResName}
+                      </div>
+                    )}
+                    {d.foodclaim[0].org?.user?.restaurant?.description && (
+                      <div className="text-xs text-gray-600">
+                        <span className="font-medium">Restaurant Description:</span> {d.foodclaim[0].org.user.restaurant.description}
+                      </div>
+                    )}
+                    {d.foodclaim[0].org?.user?.primary_PhoneN && (
+                      <div className="text-xs text-gray-600">
+                        <span className="font-medium">Phone:</span> {d.foodclaim[0].org.user.primary_PhoneN}
+                      </div>
+                    )}
+                    {d.foodclaim[0].org?.user?.address && (
+                      <div className="text-xs text-gray-600">
+                        <span className="font-medium">Address:</span> {d.foodclaim[0].org.user.address}, {d.foodclaim[0].org.user.city}, {d.foodclaim[0].org.user.country}
+                      </div>
+                    )}
+                    <div className="text-xs text-gray-600">
+                      <span className="font-medium">Claimed:</span> {getRelativeTime(d.foodclaim[0].claimedAt)} 
+                      <span className="text-gray-400 ml-1">({new Date(d.foodclaim[0].claimedAt).toLocaleDateString()})</span>
+                    </div>
+                    {d.foodclaim[0].specialInstruction && (
+                      <div className="text-xs text-gray-600">
+                        <span className="font-medium">Special Instructions:</span> {d.foodclaim[0].specialInstruction}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-xs text-gray-500 italic">
+                    This donation is available for claiming
+                  </div>
+                )}
+              </div>
             </div>
           )) : (
             <div className="col-span-2 text-center text-gray-500 py-8">
-              No donations found
+              {donations && donations.length > 0 
+                ? `No donations match the "${donationFilter}" filter` 
+                : 'No donations found'
+              }
             </div>
           )}
         </div>
