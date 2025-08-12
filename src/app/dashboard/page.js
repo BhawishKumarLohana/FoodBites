@@ -22,6 +22,7 @@ export default function DashboardPage() {
   const [userClaims, setUserClaims] = useState([]);
   const [filteredClaims, setFilteredClaims] = useState([]);
   const [claimFilter, setClaimFilter] = useState('all');
+  const [displayedFood, setDisplayedFood] = useState([]); // Separate state for display
   const [selectedPin, setSelectedPin] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
   const [nearbyDonors, setNearbyDonors] = useState([]);
@@ -57,6 +58,53 @@ export default function DashboardPage() {
     }
   };
 
+  // Helper function to calculate urgency level based on deadline
+  const getUrgencyLevel = (deadline) => {
+    const now = new Date();
+    const timeLeft = new Date(deadline) - now;
+    const hoursLeft = timeLeft / (1000 * 60 * 60);
+    
+    if (hoursLeft < 0) return 'CRITICAL'; // Expired = Critical (most urgent)
+    if (hoursLeft < 2) return 'HIGH';
+    if (hoursLeft < 6) return 'MEDIUM';
+    if (hoursLeft < 24) return 'LOW';
+    return 'FUTURE';
+  };
+
+  // Helper function to get urgency color and text
+  const getUrgencyDisplay = (urgencyLevel) => {
+    switch (urgencyLevel) {
+      case 'CRITICAL':
+        return { color: 'bg-red-100 text-red-700 border-red-300', text: 'EXPIRED', icon: '⏰' };
+      case 'HIGH':
+        return { color: 'bg-orange-100 text-orange-700 border-orange-300', text: 'SOON', icon: '⚠️' };
+      case 'MEDIUM':
+        return { color: 'bg-yellow-100 text-yellow-700 border-yellow-300', text: 'TODAY', icon: '📅' };
+      case 'LOW':
+        return { color: 'bg-green-100 text-green-700 border-green-300', text: 'TOMORROW', icon: '📅' };
+      case 'FUTURE':
+        return { color: 'bg-blue-100 text-blue-700 border-blue-300', text: 'FUTURE', icon: '✅' };
+      default:
+        return { color: 'bg-gray-100 text-gray-700 border-gray-300', text: 'UNKNOWN', icon: '❓' };
+    }
+  };
+
+  // Helper function to get time remaining text
+  const getTimeRemaining = (deadline) => {
+    const now = new Date();
+    const timeLeft = new Date(deadline) - now;
+    const hoursLeft = timeLeft / (1000 * 60 * 60);
+    const minutesLeft = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+    
+    if (hoursLeft < 0) return 'Expired';
+    if (hoursLeft < 1) return `${Math.abs(minutesLeft)} min${Math.abs(minutesLeft) !== 1 ? 's' : ''}`;
+    if (hoursLeft < 24) return `${Math.floor(hoursLeft)}h ${minutesLeft}m`;
+    const daysLeft = Math.floor(hoursLeft / 24);
+    return `${daysLeft} day${daysLeft !== 1 ? 's' : ''}`;
+  };
+
+
+
   const fetchUserData = async (userId, token) => {
     try {
       const response = await fetch(`/api/users/${userId}`, {
@@ -82,6 +130,7 @@ export default function DashboardPage() {
     console.log(data);
     if (res.ok) {
       setClaimed(data);
+      setDisplayedFood(data); // Initialize display with same data
     } else {
       console.error("Failed to fetch unclaimed food:", data.error);
     }
@@ -110,6 +159,36 @@ export default function DashboardPage() {
     const token = getToken();
     if (token) {
       await fetchUserClaims(token);
+    }
+  };
+
+  const updateClaimStatus = async (claimId, newStatus) => {
+    try {
+      const token = getToken();
+      if (!token) {
+        console.error("No auth token found.");
+        return;
+      }
+
+      const res = await fetch(`/api/food/claims/${claimId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (res.ok) {
+        console.log("Claim status updated successfully");
+        // Refresh the claims to show updated status
+        await refreshUserClaims();
+      } else {
+        const data = await res.json();
+        console.error("Failed to update claim status:", data.error);
+      }
+    } catch (error) {
+      console.error("Error updating claim status:", error);
     }
   };
 
@@ -200,6 +279,9 @@ export default function DashboardPage() {
             amount: food.quantity,
             pickup: food.isDelivery ? 'Delivery' : 'Pickup',
             location: `${food.user?.address}, ${food.user?.city}, ${food.user?.country}`,
+            urgency: getUrgencyLevel(food.deadline),
+            urgencyDisplay: getUrgencyDisplay(getUrgencyLevel(food.deadline)),
+            timeRemaining: getTimeRemaining(food.deadline),
             lat: null, // Will be set after geocoding
             lng: null,
             food: food // Keep original food data
@@ -509,6 +591,18 @@ export default function DashboardPage() {
                   }`}>
                     {d.foodclaim && d.foodclaim.length > 0 ? '✓ Claimed' : '○ Available'}
                   </span>
+                  {/* Urgency Badge */}
+                  {!d.foodclaim || d.foodclaim.length === 0 ? (
+                    (() => {
+                      const urgencyLevel = getUrgencyLevel(d.deadline);
+                      const urgencyDisplay = getUrgencyDisplay(urgencyLevel);
+                      return (
+                        <span className={`text-xs px-2 py-1 rounded-full font-medium border ${urgencyDisplay.color}`}>
+                          {urgencyDisplay.icon} {urgencyDisplay.text}
+                        </span>
+                      );
+                    })()
+                  ) : null}
                 </div>
               </div>
               <div className="text-sm text-gray-600 mb-1">
@@ -516,7 +610,20 @@ export default function DashboardPage() {
               </div>
               <div className="text-sm text-gray-600 mb-1">
                 <span className="font-medium">Deadline:</span>{" "}
-                {d.deadline ? new Date(d.deadline).toLocaleString() : "-"}
+                {d.deadline ? (
+                  <span>
+                    {new Date(d.deadline).toLocaleString()}
+                                         {!d.foodclaim || d.foodclaim.length === 0 ? (
+                       <span className={`ml-2 px-2 py-1 rounded text-xs font-medium ${
+                         getUrgencyLevel(d.deadline) === 'CRITICAL' 
+                           ? 'bg-red-100 text-red-700' 
+                           : 'bg-blue-100 text-blue-700'
+                       }`}>
+                         {getTimeRemaining(d.deadline)} left
+                       </span>
+                     ) : null}
+                  </span>
+                ) : "-"}
               </div>
               
               {/* Claim Status */}
@@ -659,35 +766,115 @@ export default function DashboardPage() {
                 <div className="bg-white p-6 rounded shadow-lg w-80 relative">
                   <button className="absolute top-2 right-2 text-gray-400" onClick={() => setShowModal(false)}>&times;</button>
                   <h3 className="text-lg font-bold mb-2">Available Food</h3>
-                  <div className="mb-2"><strong>Donor:</strong> {selectedPin.donor}</div>
-                  <div className="mb-2"><strong>Type:</strong> {selectedPin.type}</div>
-                  <div className="mb-2"><strong>Amount:</strong> {selectedPin.amount}</div>
-                  <div className="mb-2"><strong>Pickup Window:</strong> {selectedPin.pickup}</div>
-                  <div className="mb-2"><strong>Location:</strong> {selectedPin.location}</div>
-                  <button className="w-full bg-green-600 text-white p-2 rounded mt-2" onClick={() => handleClaim(selectedPin)}>Claim Food</button>
+                                <div className="mb-2"><strong>Donor:</strong> {selectedPin.donor}</div>
+              <div className="mb-2"><strong>Type:</strong> {selectedPin.type}</div>
+              <div className="mb-2"><strong>Amount:</strong> {selectedPin.amount}</div>
+              <div className="mb-2"><strong>Pickup Window:</strong> {selectedPin.pickup}</div>
+              <div className="mb-2"><strong>Location:</strong> {selectedPin.location}</div>
+              <div className="mb-2">
+                <strong>Urgency:</strong> 
+                <span className={`ml-2 px-2 py-1 rounded text-xs font-medium border ${selectedPin.urgencyDisplay.color}`}>
+                  {selectedPin.urgencyDisplay.icon} {selectedPin.urgencyDisplay.text}
+                </span>
+              </div>
+                             <div className="mb-2"><strong>Time Left:</strong> {selectedPin.timeRemaining}</div>
+               {selectedPin.urgency === 'CRITICAL' ? (
+                 <button 
+                   disabled 
+                   className="w-full bg-gray-400 text-white p-2 rounded mt-2 cursor-not-allowed"
+                   title="This food has expired and cannot be claimed"
+                 >
+                   Food Expired
+                 </button>
+               ) : (
+                 <button className="w-full bg-green-600 text-white p-2 rounded mt-2" onClick={() => handleClaim(selectedPin)}>
+                   Claim Food
+                 </button>
+               )}
                 </div>
               </div>
             )}
           </ClientOnly>
          <h3 className="text-xl font-semibold mb-4 text-gray-800">Available Food Donations</h3>
+         
+                   {/* Urgency Summary Stats */}
+          <div className="mb-6 grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="bg-white p-3 rounded-lg shadow border border-gray-200 text-center">
+              <div className="text-lg font-bold text-gray-800">{displayedFood?.length || 0}</div>
+              <div className="text-xs text-gray-600">Total Available</div>
+            </div>
+            <div className="bg-red-100 p-3 rounded-lg shadow border border-red-200 text-center">
+              <div className="text-lg font-bold text-red-700">
+                {displayedFood?.filter(item => getUrgencyLevel(item.deadline) === 'CRITICAL').length || 0}
+              </div>
+              <div className="text-xs text-red-600">⏰ Expired</div>
+            </div>
+            <div className="bg-orange-100 p-3 rounded-lg shadow border border-orange-200 text-center">
+              <div className="text-lg font-bold text-orange-700">
+                {displayedFood?.filter(item => getUrgencyLevel(item.deadline) === 'HIGH').length || 0}
+              </div>
+              <div className="text-xs text-orange-600">⚠️ Soon</div>
+            </div>
+            <div className="bg-yellow-100 p-3 rounded-lg shadow border border-yellow-200 text-center">
+              <div className="text-lg font-bold text-yellow-700">
+                {displayedFood?.filter(item => getUrgencyLevel(item.deadline) === 'MEDIUM').length || 0}
+              </div>
+              <div className="text-xs text-yellow-600">📅 Today</div>
+            </div>
+          </div>
+
+                                       {/* Sorting Options */}
+           <div className="mb-4 flex justify-end">
+             <select
+               onChange={(e) => {
+                 const sortBy = e.target.value;
+                 
+                 if (sortBy === 'deadline') {
+                   // Sort by deadline (earliest first)
+                   const sorted = [...claimed].sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
+                   setDisplayedFood(sorted);
+                 } else if (sortBy === 'distance') {
+                   // Restore original distance-sorted order from map
+                   setDisplayedFood([...claimed]); // Use original claimed data
+                 }
+               }}
+               className="px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-green-400 text-sm"
+             >
+               <option value="distance">Sort by Distance</option>
+               <option value="deadline">Sort by Deadline</option>
+             </select>
+           </div>
+
 <ClientOnly fallback={<div className="grid gap-4"><div className="bg-gray-100 p-4 rounded-lg animate-pulse">Loading...</div></div>}>
-<div className="grid gap-4">
-  {claimed && claimed.length > 0 ? claimed.map((item) => (
+ <div className="grid gap-4">
+   {displayedFood && displayedFood.length > 0 ? displayedFood.map((item) => (
     <div
       key={item.foodId}
       className="bg-white rounded-lg shadow-md p-4 border border-gray-200 transition hover:shadow-lg"
     >
       <div className="flex justify-between items-center mb-2">
         <h4 className="text-lg font-bold text-green-700">{item.title}</h4>
-        <span
-          className={`text-xs px-2 py-1 rounded-full border ${
-            item.isDelivery
-              ? 'bg-blue-100 text-blue-700 border-blue-300'
-              : 'bg-yellow-100 text-yellow-700 border-yellow-300'
-          }`}
-        >
-          {item.isDelivery ? 'Delivery' : 'Pickup'}
-        </span>
+        <div className="flex flex-col items-end gap-1">
+          <span
+            className={`text-xs px-2 py-1 rounded-full border ${
+              item.isDelivery
+                ? 'bg-blue-100 text-blue-700 border-blue-300'
+                : 'bg-yellow-100 text-yellow-700 border-yellow-300'
+            }`}
+          >
+            {item.isDelivery ? 'Delivery' : 'Pickup'}
+          </span>
+          {/* Urgency Badge */}
+          {(() => {
+            const urgencyLevel = getUrgencyLevel(item.deadline);
+            const urgencyDisplay = getUrgencyDisplay(urgencyLevel);
+            return (
+              <span className={`text-xs px-2 py-1 rounded-full font-medium border ${urgencyDisplay.color}`}>
+                {urgencyDisplay.icon} {urgencyDisplay.text}
+              </span>
+            );
+          })()}
+        </div>
       </div>
 
       <div className="text-sm text-gray-600 mb-1">
@@ -709,41 +896,62 @@ export default function DashboardPage() {
 
       <div className="text-sm text-gray-600 mb-3">
         <span className="font-medium">Deadline:</span>{' '}
-        {item.deadline ? new Date(item.deadline).toLocaleString() : '-'}
+        {item.deadline ? (
+          <span>
+            {new Date(item.deadline).toLocaleString()}
+            <span className={`ml-2 px-2 py-1 rounded text-xs font-medium ${
+              getUrgencyLevel(item.deadline) === 'EXPIRED' 
+                ? 'bg-red-100 text-red-700' 
+                : 'bg-blue-100 text-blue-700'
+            }`}>
+              {getTimeRemaining(item.deadline)} left
+            </span>
+          </span>
+        ) : '-'}
       </div>
 
-      <div className="flex justify-end gap-2">
-        <button
-          onClick={(e) => {
-            const rect = e.currentTarget.getBoundingClientRect();
-            setModalPos({ x: rect.left, y: rect.bottom + window.scrollY });
-            setSelectedFood(item);
-            setShowModal(true);
-          }}
-          className="text-sm bg-green-100 text-green-700 border border-green-300 px-3 py-1 rounded hover:bg-green-200 transition"
-        >
-          View More
-        </button>
+             <div className="flex justify-end gap-2">
+         <button
+           onClick={(e) => {
+             const rect = e.currentTarget.getBoundingClientRect();
+             setModalPos({ x: rect.left, y: rect.bottom + window.scrollY });
+             setSelectedFood(item);
+             setShowModal(true);
+           }}
+           className="text-sm bg-green-100 text-green-700 border border-green-300 px-3 py-1 rounded hover:bg-green-200 transition"
+         >
+           View More
+         </button>
 
-          
-       <button
-        onClick={() => {
-          setSelectedFood(item); 
-          setClaimModalOpen(true);
-        }}
-        className="text-sm bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition"
-      >
-        Claim
-      </button>
-
-
-      </div>
+         {getUrgencyLevel(item.deadline) === 'CRITICAL' ? (
+           <button
+             disabled
+             className="text-sm bg-gray-300 text-gray-500 px-3 py-1 rounded cursor-not-allowed"
+             title="This food has expired and cannot be claimed"
+           >
+             Expired
+           </button>
+         ) : (
+           <button
+             onClick={() => {
+               setSelectedFood(item); 
+               setClaimModalOpen(true);
+             }}
+             className="text-sm bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition"
+           >
+             Claim
+           </button>
+         )}
+       </div>
     </div>
-  )) : (
-    <div className="text-center text-gray-500 py-8">
-      No available food donations found
-    </div>
-  )}
+     )) : (
+     <div className="text-center text-gray-500 py-8">
+       {claimed && claimed.length > 0 
+         ? `No food matches the current sorting` 
+         : 'No available food donations found'
+       }
+     </div>
+   )}
 </div>
 </ClientOnly>
 
@@ -904,6 +1112,28 @@ export default function DashboardPage() {
                            )}
                          </div>
                        )}
+
+                       {/* Action Buttons */}
+                       <div className="mt-3 pt-3 border-t border-gray-100">
+                         {claim.status === 'PENDING' ? (
+                           <div className="flex gap-2 items-center">
+                             <button
+                               onClick={() => updateClaimStatus(claim.claimId, 'COMPLETE')}
+                               className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition"
+                               title="Mark as received/used"
+                             >
+                               ✓ Mark Complete
+                             </button>
+                             <span className="text-xs text-gray-500 italic">
+                               Click when you've received and used the food
+                             </span>
+                           </div>
+                         ) : (
+                           <div className="text-xs text-green-600 font-medium">
+                             ✓ Claim completed successfully
+                           </div>
+                         )}
+                       </div>
                      </div>
                    </div>
                  </div>
@@ -947,6 +1177,23 @@ export default function DashboardPage() {
                 <p><strong>Quantity:</strong> {selectedFood.quantity}</p>
                 <p><strong>Type:</strong> {selectedFood.isDelivery ? "Delivery" : "Pickup"}</p>
                 <p><strong>Deadline:</strong> {new Date(selectedFood.deadline).toLocaleString()}</p>
+                <p>
+                  <strong>Urgency:</strong> 
+                  <span className={`ml-2 px-2 py-1 rounded text-xs font-medium border ${
+                    (() => {
+                      const urgencyLevel = getUrgencyLevel(selectedFood.deadline);
+                      const urgencyDisplay = getUrgencyDisplay(urgencyLevel);
+                      return urgencyDisplay.color;
+                    })()
+                  }`}>
+                    {(() => {
+                      const urgencyLevel = getUrgencyLevel(selectedFood.deadline);
+                      const urgencyDisplay = getUrgencyDisplay(urgencyLevel);
+                      return `${urgencyDisplay.icon} ${urgencyDisplay.text}`;
+                    })()}
+                  </span>
+                </p>
+                <p><strong>Time Left:</strong> {getTimeRemaining(selectedFood.deadline)}</p>
                 <hr className="my-2" />
                 <p className="font-semibold">Donor Info:</p>
                 <p>{selectedFood.user?.email}</p>
@@ -954,14 +1201,34 @@ export default function DashboardPage() {
                 <p>{selectedFood.user?.address}, {selectedFood.user?.city}, {selectedFood.user?.country}</p>
               </div>
 
-              <div className="flex justify-end mt-4">
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="bg-gray-100 text-gray-800 px-3 py-1 rounded hover:bg-gray-200 transition"
-                >
-                  Close
-                </button>
-              </div>
+                             <div className="flex justify-end mt-4 gap-2">
+                 {getUrgencyLevel(selectedFood.deadline) === 'CRITICAL' ? (
+                   <button
+                     disabled
+                     className="bg-gray-300 text-gray-500 px-3 py-1 rounded cursor-not-allowed"
+                     title="This food has expired and cannot be claimed"
+                   >
+                     Food Expired
+                   </button>
+                 ) : (
+                   <button
+                     onClick={() => {
+                       setShowModal(false);
+                       setSelectedFood(selectedFood);
+                       setClaimModalOpen(true);
+                     }}
+                     className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition"
+                   >
+                     Claim Food
+                   </button>
+                 )}
+                 <button
+                   onClick={() => setShowModal(false)}
+                   className="bg-gray-100 text-gray-800 px-3 py-1 rounded hover:bg-gray-200 transition"
+                 >
+                   Close
+                 </button>
+               </div>
             </div>
           </div>
         )}
