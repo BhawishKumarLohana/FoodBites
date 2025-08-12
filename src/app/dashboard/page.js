@@ -19,6 +19,9 @@ export default function DashboardPage() {
   const [available, setAvailable] = useState([]);
   const [claimed, setClaimed] = useState([]);
   const [unClaimed,setunClaimed]=useState([]);
+  const [userClaims, setUserClaims] = useState([]);
+  const [filteredClaims, setFilteredClaims] = useState([]);
+  const [claimFilter, setClaimFilter] = useState('all');
   const [selectedPin, setSelectedPin] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
   const [nearbyDonors, setNearbyDonors] = useState([]);
@@ -84,6 +87,32 @@ export default function DashboardPage() {
     }
   };
 
+  const fetchUserClaims = async (token) => {
+    try {
+      const res = await fetch("/api/food/claims", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setUserClaims(data);
+        setFilteredClaims(data);
+      } else {
+        console.error("Failed to fetch user claims:", data.error);
+      }
+    } catch (error) {
+      console.error("Error fetching user claims:", error);
+    }
+  };
+
+  const refreshUserClaims = async () => {
+    const token = getToken();
+    if (token) {
+      await fetchUserClaims(token);
+    }
+  };
+
   useEffect(() => {
     const token = getToken();
     if (!token) {
@@ -124,6 +153,11 @@ export default function DashboardPage() {
   
   fetchDonations();
   fetchUnclaimed();
+  
+  // Fetch user claims if claimant
+  if (payload.role === "claimant") {
+    fetchUserClaims(token);
+  }
 
   }, [router]);
 
@@ -137,6 +171,17 @@ export default function DashboardPage() {
       setFilteredDonations(donations.filter(d => !d.foodclaim || d.foodclaim.length === 0));
     }
   }, [donations, donationFilter]);
+
+  // Handle claim filtering
+  useEffect(() => {
+    if (claimFilter === 'all') {
+      setFilteredClaims(userClaims);
+    } else if (claimFilter === 'pending') {
+      setFilteredClaims(userClaims.filter(c => c.status === 'PENDING'));
+    } else if (claimFilter === 'complete') {
+      setFilteredClaims(userClaims.filter(c => c.status === 'COMPLETE'));
+    }
+  }, [userClaims, claimFilter]);
 
   // Get user location for claimants
   useEffect(() => {
@@ -277,6 +322,8 @@ export default function DashboardPage() {
     if (res.ok) {
       console.log("Claim successful:", data);
       fetchUnclaimed();
+      // Refresh user claims to show the new claim
+      refreshUserClaims();
       setClaimModalOpen(false);
       setClaimForm({ status: "PENDING", specialInstruction: "" });
       setSelectedFood(null);
@@ -673,7 +720,7 @@ export default function DashboardPage() {
             setSelectedFood(item);
             setShowModal(true);
           }}
-          className="text-sm bg-gray-100 text-gray-700 border border-gray-300 px-3 py-1 rounded hover:bg-gray-200 transition"
+          className="text-sm bg-green-100 text-green-700 border border-green-300 px-3 py-1 rounded hover:bg-green-200 transition"
         >
           View More
         </button>
@@ -699,6 +746,178 @@ export default function DashboardPage() {
   )}
 </div>
 </ClientOnly>
+
+         {/* Previous Claims Section */}
+         <div className="mt-8">
+           <h3 className="text-xl font-semibold mb-4 text-gray-800">Previous Claims</h3>
+           
+           {/* Summary Stats */}
+           <div className="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+             <div className="bg-white p-4 rounded-lg shadow border border-gray-200 text-center">
+               <div className="text-2xl font-bold text-gray-800">{userClaims?.length || 0}</div>
+               <div className="text-sm text-gray-600">Total Claims</div>
+             </div>
+             <div className="bg-white p-4 rounded-lg shadow border border-gray-200 text-center">
+               <div className="text-2xl font-bold text-orange-600">
+                 {userClaims?.filter(c => c.status === 'PENDING').length || 0}
+               </div>
+               <div className="text-sm text-gray-600">Pending</div>
+             </div>
+             <div className="bg-white p-4 rounded-lg shadow border border-gray-200 text-center">
+               <div className="text-2xl font-bold text-green-600">
+                 {userClaims?.filter(c => c.status === 'COMPLETE').length || 0}
+               </div>
+               <div className="text-sm text-gray-600">Completed</div>
+             </div>
+           </div>
+           
+           {/* Filter Options */}
+           <div className="mb-4 flex justify-between items-center">
+             <div className="text-sm text-gray-600">
+               Showing {filteredClaims?.length || 0} of {userClaims?.length || 0} claims
+             </div>
+             <div className="flex items-center gap-2">
+               {claimFilter !== 'all' && (
+                 <button
+                   onClick={() => setClaimFilter('all')}
+                   className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 underline"
+                 >
+                   Reset Filter
+                 </button>
+               )}
+               <select
+                 value={claimFilter}
+                 onChange={(e) => {
+                   setClaimFilter(e.target.value);
+                 }}
+                 className="px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-green-400 text-sm"
+               >
+                 <option value="all">All Claims</option>
+                 <option value="pending">Pending Only</option>
+                 <option value="complete">Completed Only</option>
+               </select>
+             </div>
+           </div>
+           
+           <ClientOnly fallback={<div className="grid gap-4"><div className="bg-gray-100 p-4 rounded-lg animate-pulse">Loading...</div></div>}>
+             <div className="grid gap-4">
+               {filteredClaims && filteredClaims.length > 0 ? filteredClaims.map((claim) => (
+                 <div key={claim.claimId} className={`p-4 rounded-lg shadow border ${
+                   claim.status === 'COMPLETE' 
+                     ? 'bg-white border-green-200' 
+                     : 'bg-white border-orange-200'
+                 }`}>
+                   {/* Claim Status Badge */}
+                   <div className="flex justify-between items-start mb-2">
+                     <h4 className="text-md font-bold text-green-700">{claim.food.title}</h4>
+                     <div className="flex flex-col items-end gap-1">
+                       <span
+                         className={`text-xs px-2 py-1 rounded-full border ${
+                           claim.food.isDelivery
+                             ? 'bg-blue-100 text-blue-700 border-blue-300'
+                             : 'bg-yellow-100 text-yellow-700 border-yellow-300'
+                         }`}
+                       >
+                         {claim.food.isDelivery ? 'Delivery' : 'Pickup'}
+                       </span>
+                       <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                         claim.status === 'COMPLETE'
+                           ? 'bg-green-100 text-green-700 border border-green-300'
+                           : 'bg-orange-100 text-orange-600 border border-orange-300'
+                       }`}>
+                         {claim.status === 'COMPLETE' ? '✓ Completed' : '⏳ Pending'}
+                       </span>
+                     </div>
+                   </div>
+                   
+                   <div className="text-sm text-gray-600 mb-1">
+                     <span className="font-medium">Quantity:</span> {claim.food.quantity}
+                   </div>
+                   
+                   <div className="text-sm text-gray-600 mb-1">
+                     <span className="font-medium">Deadline:</span>{" "}
+                     {claim.food.deadline ? new Date(claim.food.deadline).toLocaleString() : "-"}
+                   </div>
+                   
+                   {/* Claim Details */}
+                   <div className="mt-3 pt-3 border-t border-gray-100">
+                     <div className="space-y-2">
+                       <div className="flex items-center gap-2">
+                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                           claim.status === 'COMPLETE' 
+                             ? 'bg-blue-100 text-blue-800' 
+                             : 'bg-orange-100 text-orange-800'
+                         }`}>
+                           {claim.status === 'COMPLETE' ? 'Completed' : 'Pending'}
+                         </span>
+                       </div>
+                       
+                       <div className="text-xs text-gray-600">
+                         <span className="font-medium">Claimed:</span> {getRelativeTime(claim.claimedAt)} 
+                         <span className="text-gray-400 ml-1">({new Date(claim.claimedAt).toLocaleDateString()})</span>
+                       </div>
+                       
+                       {claim.specialInstruction && (
+                         <div className="text-xs text-gray-600">
+                           <span className="font-medium">Special Instructions:</span> {claim.specialInstruction}
+                         </div>
+                       )}
+                       
+                       {/* Donor Information */}
+                       <div className="text-xs text-gray-600">
+                         <span className="font-medium">Donor:</span> {claim.food.user.email}
+                         {claim.food.user.primary_PhoneN && (
+                           <span className="text-gray-400 ml-1">({claim.food.user.primary_PhoneN})</span>
+                         )}
+                       </div>
+                       
+                       {claim.food.user.address && (
+                         <div className="text-xs text-gray-600">
+                           <span className="font-medium">Donor Address:</span> {claim.food.user.address}, {claim.food.user.city}, {claim.food.user.country}
+                         </div>
+                       )}
+                       
+                       {/* Organization/Restaurant/Individual Donor Details */}
+                       {claim.food.user.organization && (
+                         <div className="text-xs text-gray-600">
+                           <span className="font-medium">Organization:</span> {claim.food.user.organization.orgName}
+                           {claim.food.user.organization.type && (
+                             <span className="text-gray-400 ml-1">({claim.food.user.organization.type})</span>
+                           )}
+                         </div>
+                       )}
+                       
+                       {claim.food.user.restaurant && (
+                         <div className="text-xs text-gray-600">
+                           <span className="font-medium">Restaurant:</span> {claim.food.user.restaurant.ResName}
+                           {claim.food.user.restaurant.description && (
+                             <span className="text-gray-400 ml-1">({claim.food.user.restaurant.description})</span>
+                           )}
+                         </div>
+                       )}
+                       
+                       {claim.food.user.individualDonor && (
+                         <div className="text-xs text-gray-600">
+                           <span className="font-medium">Donor Name:</span> {claim.food.user.individualDonor.fullName}
+                           {claim.food.user.individualDonor.idcard && (
+                             <span className="text-gray-400 ml-1">({claim.food.user.individualDonor.idcard})</span>
+                           )}
+                         </div>
+                       )}
+                     </div>
+                   </div>
+                 </div>
+               )) : (
+                 <div className="text-center text-gray-500 py-8">
+                   {userClaims && userClaims.length > 0 
+                     ? `No claims match the "${claimFilter}" filter` 
+                     : 'No claims found'
+                   }
+                 </div>
+               )}
+             </div>
+           </ClientOnly>
+         </div>
 
 
         </div>

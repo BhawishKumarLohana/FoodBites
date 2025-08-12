@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 export default function ProfilePage() {
   const [user, setUser] = useState(null);
   const [userData, setUserData] = useState(null);
-  const [activity, setActivity] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -478,16 +477,7 @@ export default function ProfilePage() {
         )}
       </div>
 
-      <div className="bg-white p-6 rounded shadow-md w-80 mb-4">
-        <h2 className="text-lg font-semibold mb-2">Activity Log</h2>
-        <ul>
-          {activity.map((item) => (
-            <li key={item.id} className="mb-2 border-b pb-2 last:border-b-0">
-              <span className="font-medium">{item.action}</span> - {item.status} <span className="text-xs text-gray-500">({item.date})</span>
-            </li>
-          ))}
-        </ul>
-      </div>
+
 
       <div className="flex gap-4">
         <button onClick={handleLogout} className="bg-red-500 text-white px-4 py-2 rounded">
