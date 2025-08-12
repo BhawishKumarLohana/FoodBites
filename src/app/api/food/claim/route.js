@@ -16,7 +16,21 @@ export async function POST(req) {
 
     const decoded = jwt.verify(token, JWT_SECRET);
     const userId = decoded.userId;
-    const { foodId,status,specialInstruction } = body;
+    const { foodId, status, specialInstruction } = body;
+
+    // Check if food is already claimed
+    const existingFood = await prisma.food.findUnique({
+      where: { foodId: foodId },
+      include: { foodclaim: true }
+    });
+
+    if (!existingFood) {
+      return NextResponse.json({ error: "Food not found" }, { status: 404 });
+    }
+
+    if (existingFood.foodclaim && existingFood.foodclaim.length > 0) {
+      return NextResponse.json({ error: "Food already claimed" }, { status: 400 });
+    }
 
     // 1. Create claim
     const claim = await prisma.foodClaim.create({
@@ -30,14 +44,15 @@ export async function POST(req) {
       },
     });
 
-    // 2. Update Food with the new claimId
+    // 2. Update Food with the new claimId (keeping this for backward compatibility)
     await prisma.food.update({
       where: { foodId: foodId },
       data: { claimId: claim.claimId },
     });
 
+    console.log("Claim created successfully:", claim);
 
-    return NextResponse.json({ message:"SUCESS" });
+    return NextResponse.json({ message: "SUCCESS", claimId: claim.claimId });
   } catch (error) {
     console.error("Error claiming food:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

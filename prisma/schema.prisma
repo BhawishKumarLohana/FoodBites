@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
@@ -14,17 +8,120 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Status {
-  PENDING
-  COMPLETE
+model activitylog {
+  id        Int                @id @default(autoincrement())
+  userId    Int
+  action    activitylog_action
+  timestamp DateTime           @default(now())
+  user      user               @relation(fields: [userId], references: [userId], map: "ActivityLog_userId_fkey")
+
+  @@index([userId], map: "ActivityLog_userId_fkey")
 }
 
-enum UserType {
+model food {
+  foodId     Int         @id @unique(map: "Food_foodId_key") @default(autoincrement())
+  claimId    Int?        @unique(map: "Food_claimId_key")
+  title      String
+  quantity   String
+  deadline   DateTime
+  DonatedBy  Int
+  isDelivery Boolean?    @default(false)
+  user       user        @relation(fields: [DonatedBy], references: [userId], map: "Food_DonatedBy_fkey")
+  foodclaim  foodclaim[]
+
+  @@index([DonatedBy], map: "Food_DonatedBy_fkey")
+}
+
+model foodclaim {
+  claimId            Int              @id @default(autoincrement())
+  claimedAt          DateTime
+  foodId             Int
+  claimedBy          Int
+  deliver            Boolean
+  specialInstruction String?
+  status             foodclaim_status
+  user               user             @relation(fields: [claimedBy], references: [userId], map: "FoodClaim_claimedBy_fkey")
+  food               food             @relation(fields: [foodId], references: [foodId], map: "FoodClaim_foodId_fkey")
+
+  @@index([claimedBy], map: "FoodClaim_claimedBy_fkey")
+  @@index([foodId], map: "FoodClaim_foodId_fkey")
+}
+
+model individualdonor {
+  userId   Int     @id @unique(map: "IndividualDonor_userId_key")
+  fullName String
+  idcard   String? @unique(map: "IndividualDonor_idcard_key")
+  user     user    @relation(fields: [userId], references: [userId], map: "IndividualDonor_userId_fkey")
+}
+
+model organization {
+  userId      Int     @id @unique(map: "Organization_userId_key")
+  orgName     String
+  regNumber   Int?    @unique(map: "Organization_regNumber_key")
+  description String?
+  type        String
+  user        user    @relation(fields: [userId], references: [userId], map: "Organization_userId_fkey")
+}
+
+model rating {
+  id                            Int      @id @default(autoincrement())
+  rating                        Int
+  comment                       String?
+  createdAt                     DateTime @default(now())
+  raterId                       Int
+  ratedUserId                   Int
+  claimId                       Int?
+  user_rating_ratedUserIdTouser user     @relation("rating_ratedUserIdTouser", fields: [ratedUserId], references: [userId], map: "Rating_ratedUserId_fkey")
+  user_rating_raterIdTouser     user     @relation("rating_raterIdTouser", fields: [raterId], references: [userId], map: "Rating_raterId_fkey")
+
+  @@unique([raterId, ratedUserId, claimId], map: "Rating_raterId_ratedUserId_claimId_key")
+  @@index([ratedUserId], map: "Rating_ratedUserId_fkey")
+}
+
+model restaurant {
+  userId      Int     @id @unique(map: "Restaurant_userId_key")
+  ResName     String
+  openTime    String
+  closeTime   String
+  description String?
+  foodId      Int?    @unique(map: "Restaurant_foodId_key")
+  user        user    @relation(fields: [userId], references: [userId], map: "Restaurant_userId_fkey")
+}
+
+model user {
+  userId                          Int              @id @default(autoincrement())
+  type                            user_type
+  email                           String           @unique(map: "User_email_key")
+  password                        String
+  address                         String
+  country                         String
+  city                            String
+  createdAt                       DateTime         @default(now())
+  primary_PhoneN                  String
+  secondary_PhoneN                String
+  addressVerified                 Boolean          @default(false)
+  averageRating                   Float            @default(0)
+  phoneVerified                   Boolean          @default(false)
+  totalRatings                    Int              @default(0)
+  trustLevel                      user_trustLevel  @default(BRONZE)
+  trustScore                      Float            @default(0)
+  activitylog                     activitylog[]
+  food                            food[]
+  foodclaim                       foodclaim[]
+  individualdonor                 individualdonor?
+  organization                    organization?
+  rating_rating_ratedUserIdTouser rating[]         @relation("rating_ratedUserIdTouser")
+  rating_rating_raterIdTouser     rating[]         @relation("rating_raterIdTouser")
+  restaurant                      restaurant?
+}
+
+enum user_type {
   ORGANIZATION
   RESTAURANT
   INDIVIDUAL_DONOR
 }
-enum ActionType{
+
+enum activitylog_action {
   CREATE_FOOD
   UPDATE_FOOD
   DELETE_FOOD
@@ -32,92 +129,14 @@ enum ActionType{
   CANCEL_CLAIM
 }
 
-model User {
-  userId           Int      @id @default(autoincrement())
-  type             UserType
-  email            String   @unique
-  password         String
-  address          String
-  country          String
-  city             String
-  createdAt        DateTime @default(now())
-  primary_PhoneN   String
-  secondary_PhoneN String
-
-  // Specializations (1:1) 
-  organization    Organization?
-  restaurant      Restaurant?
-  individualDonor IndividualDonor?
-  //relations
-  activitylog ActivityLog[]
-  food Food[]
+enum foodclaim_status {
+  PENDING
+  COMPLETE
 }
 
-model Organization {
-  userId      Int         @id @unique
-  orgName     String
-  regNumber   Int?        @unique //optional
-  description String? //optional
-  type        String //NGO,NPO,ETC
-  foodclaim FoodClaim[]
-  user        User        @relation(fields: [userId], references: [userId])
+enum user_trustLevel {
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
 }
-
-model IndividualDonor {
-  userId    Int         @id @unique
-  fullName  String
-  idcard    String?     @unique
-  user      User        @relation(fields: [userId], references: [userId])
-}
-
-model Restaurant {
-  userId      Int     @id @unique
-  ResName     String
-  openTime    String
-  closeTime   String
-  description String?
-
-  foodId    Int?        @unique
-  user      User        @relation(fields: [userId], references: [userId])
-}
-
-model Food {
-  foodId     Int         @id @unique @default(autoincrement())
-  claimId    Int?         @unique
-  DonatedBy    Int         
-  isDelivery    Boolean? @default(false)
-  title      String    
-  quantity   String
-  deadline   DateTime
-  foodclaim FoodClaim[]
-
-  user User @relation(fields: [DonatedBy],references: [userId])
-  
-}
-model FoodClaim {
-  claimId Int @id @default(autoincrement()) 
-  claimedAt DateTime
-
-  foodId Int
-  food Food @relation(fields: [foodId],references: [foodId])
-
-  claimedBy Int 
-  org Organization @relation(fields: [claimedBy],references: [userId])
-
-  deliver Boolean
-  specialInstruction String?
-
-  status     Status
-}
-model ActivityLog {
-  id        Int      @id @default(autoincrement())
-  userId    Int 
-  action    ActionType   // e.g. "CREATE_FOOD", "CLAIM_FOOD", "UPDATE_PROFILE"
-  timestamp DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [userId])
-}
-
-
-
-
-

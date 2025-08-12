@@ -32,10 +32,17 @@ export default function DashboardPage() {
   const [showModal, setShowModal] = useState(false);
   const [modalPos, setModalPos] = useState({ x: 0, y: 0 });
   const [claimModalOpen, setClaimModalOpen] = useState(false);
-    const [claimForm, setClaimForm] = useState({
-      status: "PENDING",
-      specialInstruction: "",
-    });
+  const [ratingModalOpen, setRatingModalOpen] = useState(false);
+  const [ratingForm, setRatingForm] = useState({
+    rating: 5,
+    comment: ""
+  });
+  const [claimToRate, setClaimToRate] = useState(null);
+  const [claimForm, setClaimForm] = useState({
+    status: "PENDING",
+    specialInstruction: "",
+  });
+  const [error, setError] = useState("");
 
   
 
@@ -181,6 +188,16 @@ export default function DashboardPage() {
 
       if (res.ok) {
         console.log("Claim status updated successfully");
+        
+        // If marking as complete, open rating modal
+        if (newStatus === 'COMPLETE') {
+          const claim = userClaims.find(c => c.claimId === claimId);
+          if (claim) {
+            setClaimToRate(claim);
+            setRatingModalOpen(true);
+          }
+        }
+        
         // Refresh the claims to show updated status
         await refreshUserClaims();
       } else {
@@ -189,6 +206,52 @@ export default function DashboardPage() {
       }
     } catch (error) {
       console.error("Error updating claim status:", error);
+    }
+  };
+
+  const submitRating = async () => {
+    try {
+      if (!claimToRate) return;
+
+      const token = getToken();
+      if (!token) {
+        console.error("No auth token found.");
+        return;
+      }
+
+      // Get the donor's user ID from the claim
+      const donorUserId = claimToRate.food.DonatedBy;
+
+      const res = await fetch("/api/ratings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          ratedUserId: donorUserId,
+          rating: ratingForm.rating,
+          comment: ratingForm.comment,
+          claimId: claimToRate.claimId
+        }),
+      });
+
+      if (res.ok) {
+        console.log("Rating submitted successfully");
+        setRatingModalOpen(false);
+        setClaimToRate(null);
+        setRatingForm({ rating: 5, comment: "" });
+        
+        // Show success message
+        alert("Thank you for your rating! This helps build trust in our community.");
+      } else {
+        const data = await res.json();
+        console.error("Failed to submit rating:", data.error);
+        alert("Failed to submit rating. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error submitting rating:", error);
+      alert("Error submitting rating. Please try again.");
     }
   };
 
@@ -218,15 +281,20 @@ export default function DashboardPage() {
         },
       });
       const data = await res.json();
-      console.log("DATA" + data);
+      console.log("Donations API Response:", data);
+      console.log("Response status:", res.status);
+      
       if (res.ok) {
         setDonations(data);
         setFilteredDonations(data); // Initialize filtered donations
+        console.log("Donations set successfully:", data);
       } else {
-        console.error(data.error);
+        console.error("API Error:", data.error);
+        setError('Failed to fetch donations');
       }
     } catch (err) {
       console.error('Error fetching donations:', err);
+      setError('Failed to fetch donations');
     }
   };
   
@@ -242,12 +310,19 @@ export default function DashboardPage() {
 
   // Handle donation filtering
   useEffect(() => {
+    console.log('Donation filtering - donations:', donations);
+    console.log('Donation filtering - filter:', donationFilter);
+    
     if (donationFilter === 'all') {
       setFilteredDonations(donations);
     } else if (donationFilter === 'claimed') {
-      setFilteredDonations(donations.filter(d => d.foodclaim && d.foodclaim.length > 0));
+      const claimedDonations = donations.filter(d => d.foodclaim && d.foodclaim.length > 0);
+      console.log('Claimed donations:', claimedDonations);
+      setFilteredDonations(claimedDonations);
     } else if (donationFilter === 'unclaimed') {
-      setFilteredDonations(donations.filter(d => !d.foodclaim || d.foodclaim.length === 0));
+      const unclaimedDonations = donations.filter(d => !d.foodclaim || d.foodclaim.length === 0);
+      console.log('Unclaimed donations:', unclaimedDonations);
+      setFilteredDonations(unclaimedDonations);
     }
   }, [donations, donationFilter]);
 
@@ -406,6 +481,10 @@ export default function DashboardPage() {
       fetchUnclaimed();
       // Refresh user claims to show the new claim
       refreshUserClaims();
+      // Refresh donor's donations to show updated claim status
+      if (role === "donor") {
+        fetchDonations();
+      }
       setClaimModalOpen(false);
       setClaimForm({ status: "PENDING", specialInstruction: "" });
       setSelectedFood(null);
@@ -430,6 +509,19 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 mt-0">
+      {/* Error Display */}
+      {error && (
+        <div className="fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded z-50">
+          <span className="block sm:inline">{error}</span>
+          <button 
+            onClick={() => setError("")} 
+            className="absolute top-0 bottom-0 right-0 px-4 py-3"
+          >
+            <span className="text-2xl">&times;</span>
+          </button>
+        </div>
+      )}
+      
       {role === "donor" ? (
         <div className="min-h-screen bg-gray-50 py-10 px-4 sm:px-6 lg:px-8">
   <div className="max-w-4xl mx-auto">
@@ -640,59 +732,16 @@ export default function DashboardPage() {
                       </span>
                     </div>
                     <div className="text-xs text-gray-600">
-                      <span className="font-medium">Claimed by:</span> {d.foodclaim[0].org?.user?.email || 'Unknown Organization'}
-                      {d.foodclaim[0].org?.type && (
-                        <span className="text-gray-400 ml-1">({d.foodclaim[0].org.type})</span>
-                      )}
+                      <span className="font-medium">Claimed by:</span> {d.foodclaim[0].user?.email || 'Unknown User'}
                     </div>
-                    {d.foodclaim[0].org?.orgName && (
+                    {d.foodclaim[0].user?.primary_PhoneN && (
                       <div className="text-xs text-gray-600">
-                        <span className="font-medium">Organization:</span> {d.foodclaim[0].org.orgName}
+                        <span className="font-medium">Phone:</span> {d.foodclaim[0].user.primary_PhoneN}
                       </div>
                     )}
-                    {d.foodclaim[0].org?.regNumber && (
+                    {d.foodclaim[0].user?.address && (
                       <div className="text-xs text-gray-600">
-                        <span className="font-medium">Reg. Number:</span> {d.foodclaim[0].org.regNumber}
-                      </div>
-                    )}
-                    {d.foodclaim[0].org?.description && (
-                      <div className="text-xs text-gray-600">
-                        <span className="font-medium">Description:</span> {d.foodclaim[0].org.description}
-                      </div>
-                    )}
-                    {d.foodclaim[0].org?.openTime && d.foodclaim[0].org?.closeTime && (
-                      <div className="text-xs text-gray-600">
-                        <span className="font-medium">Hours:</span> {d.foodclaim[0].org.openTime} - {d.foodclaim[0].org.closeTime}
-                      </div>
-                    )}
-                    {d.foodclaim[0].org?.user?.individualDonor?.fullName && (
-                      <div className="text-xs text-gray-600">
-                        <span className="font-medium">Donor Name:</span> {d.foodclaim[0].org.user.individualDonor.fullName}
-                      </div>
-                    )}
-                    {d.foodclaim[0].org?.user?.individualDonor?.idcard && (
-                      <div className="text-xs text-gray-600">
-                        <span className="font-medium">ID Card:</span> {d.foodclaim[0].org.user.individualDonor.idcard}
-                      </div>
-                    )}
-                    {d.foodclaim[0].org?.user?.restaurant?.ResName && (
-                      <div className="text-xs text-gray-600">
-                        <span className="font-medium">Restaurant:</span> {d.foodclaim[0].org.user.restaurant.ResName}
-                      </div>
-                    )}
-                    {d.foodclaim[0].org?.user?.restaurant?.description && (
-                      <div className="text-xs text-gray-600">
-                        <span className="font-medium">Restaurant Description:</span> {d.foodclaim[0].org.user.restaurant.description}
-                      </div>
-                    )}
-                    {d.foodclaim[0].org?.user?.primary_PhoneN && (
-                      <div className="text-xs text-gray-600">
-                        <span className="font-medium">Phone:</span> {d.foodclaim[0].org.user.primary_PhoneN}
-                      </div>
-                    )}
-                    {d.foodclaim[0].org?.user?.address && (
-                      <div className="text-xs text-gray-600">
-                        <span className="font-medium">Address:</span> {d.foodclaim[0].org.user.address}, {d.foodclaim[0].org.user.city}, {d.foodclaim[0].org.user.country}
+                        <span className="font-medium">Address:</span> {d.foodclaim[0].user.address}, {d.foodclaim[0].user.city}, {d.foodclaim[0].user.country}
                       </div>
                     )}
                     <div className="text-xs text-gray-600">
@@ -1288,6 +1337,82 @@ export default function DashboardPage() {
                   className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition text-sm"
                 >
                   Confirm Claim
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </ClientOnly>
+
+      {/* Rating Modal */}
+      <ClientOnly fallback={null}>
+        {ratingModalOpen && claimToRate && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm transition">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 mx-4 sm:mx-0">
+              <h2 className="text-xl font-bold text-green-700 mb-4">Rate Your Experience</h2>
+              
+              <div className="mb-6">
+                <p className="text-gray-600 mb-2">
+                  How was your experience with <strong>{claimToRate.food.title}</strong> from <strong>{claimToRate.food.user?.email}</strong>?
+                </p>
+                <p className="text-sm text-gray-500">
+                  Your rating helps build trust in our community and helps other users make informed decisions.
+                </p>
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-gray-700 mb-3">Rating</label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      onClick={() => setRatingForm({ ...ratingForm, rating: star })}
+                      className={`text-2xl transition-colors ${
+                        star <= ratingForm.rating 
+                          ? 'text-yellow-400 hover:text-yellow-500' 
+                          : 'text-gray-300 hover:text-gray-400'
+                      }`}
+                    >
+                      {star <= ratingForm.rating ? '★' : '☆'}
+                    </button>
+                  ))}
+                </div>
+                <div className="text-sm text-gray-600 mt-1">
+                  {ratingForm.rating === 1 && 'Poor'}
+                  {ratingForm.rating === 2 && 'Fair'}
+                  {ratingForm.rating === 3 && 'Good'}
+                  {ratingForm.rating === 4 && 'Very Good'}
+                  {ratingForm.rating === 5 && 'Excellent'}
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Comment (Optional)</label>
+                <textarea
+                  rows={3}
+                  placeholder="Share your experience or any feedback..."
+                  value={ratingForm.comment}
+                  onChange={(e) => setRatingForm({ ...ratingForm, comment: e.target.value })}
+                  className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => {
+                    setRatingModalOpen(false);
+                    setClaimToRate(null);
+                    setRatingForm({ rating: 5, comment: "" });
+                  }}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition text-sm"
+                >
+                  Skip Rating
+                </button>
+                <button
+                  onClick={submitRating}
+                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition text-sm"
+                >
+                  Submit Rating
                 </button>
               </div>
             </div>

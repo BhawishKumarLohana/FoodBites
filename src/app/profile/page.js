@@ -12,6 +12,7 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({});
   const [updateLoading, setUpdateLoading] = useState(false);
+  const [trustMetrics, setTrustMetrics] = useState(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -61,6 +62,9 @@ export default function ProfilePage() {
           fullName: data.individualDonor?.fullName || '',
           idcard: data.individualDonor?.idcard || '',
         });
+        
+        // Fetch trust metrics
+        fetchTrustMetrics(userId, token);
       } else {
         setError('Failed to load user data');
       }
@@ -69,6 +73,32 @@ export default function ProfilePage() {
       setError('Failed to load user data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchTrustMetrics = async (userId, token) => {
+    try {
+      console.log('Fetching trust metrics for user:', userId);
+      const response = await fetch(`/api/trust?userId=${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      console.log('Trust API response status:', response.status);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Trust metrics data received:', data);
+        setTrustMetrics(data);
+      } else {
+        const errorData = await response.json();
+        console.error('Trust API error:', errorData);
+        setError('Failed to load trust metrics');
+      }
+    } catch (error) {
+      console.error('Error fetching trust metrics:', error);
+      setError('Failed to load trust metrics');
     }
   };
 
@@ -477,8 +507,83 @@ export default function ProfilePage() {
         )}
       </div>
 
-
-
+      {/* Trust Metrics Section */}
+      {trustMetrics && (
+        <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+          <h2 className="text-2xl font-bold mb-4">Trust Metrics</h2>
+          
+          {/* Trust Level Badge */}
+          <div className="mb-4">
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-800">
+              <span className="mr-2">🏅</span>
+              {trustMetrics.trustLevel} Level
+            </span>
+          </div>
+          
+          {/* Trust Score */}
+          <div className="mb-4">
+            <div className="text-3xl font-bold text-green-600">{trustMetrics.trustScore}</div>
+            <div className="text-sm text-gray-600">Trust Score</div>
+          </div>
+          
+          {/* Rating Summary */}
+          <div className="mb-4">
+            <div className="flex items-center mb-2">
+              <div className="flex text-yellow-400">
+                {[...Array(5)].map((_, i) => (
+                  <span key={i} className={i < Math.floor(trustMetrics.averageRating) ? 'text-yellow-400' : 'text-gray-300'}>
+                    ★
+                  </span>
+                ))}
+              </div>
+              <span className="ml-2 text-lg font-semibold">{trustMetrics.averageRating}</span>
+            </div>
+            <div className="text-sm text-gray-600">{trustMetrics.totalRatings} rating{trustMetrics.totalRatings !== 1 ? 's' : ''}</div>
+          </div>
+          
+          {/* Activity Summary */}
+          <div className="mb-4">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="font-medium">Total Donations:</span> {trustMetrics.totalDonations}
+              </div>
+              <div>
+                <span className="font-medium">Total Claims:</span> {trustMetrics.totalClaims}
+              </div>
+              <div>
+                <span className="font-medium">Completion Rate:</span> {trustMetrics.completionRate}%
+              </div>
+              <div>
+                <span className="font-medium">Member Since:</span> {new Date(trustMetrics.createdAt).toLocaleDateString()}
+              </div>
+            </div>
+          </div>
+          
+          {/* Recent Reviews */}
+          {trustMetrics.recentRatings && trustMetrics.recentRatings.length > 0 && (
+            <div>
+              <hr className="my-4" />
+              <h3 className="font-semibold mb-2">Recent Reviews</h3>
+              {trustMetrics.recentRatings.map((rating) => (
+                <div key={rating.id} className="mb-2 p-3 bg-gray-50 rounded">
+                  <div className="flex items-center mb-1">
+                    <div className="flex text-yellow-400 text-sm">
+                      {[...Array(5)].map((_, i) => (
+                        <span key={i} className={i < rating.rating ? 'text-yellow-400' : 'text-gray-300'}>
+                          ★
+                        </span>
+                      ))}
+                    </div>
+                    <span className="ml-2 text-xs text-gray-600">by {rating.rater.email}</span>
+                  </div>
+                  <div className="text-sm text-gray-700">"{rating.comment}"</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      
       <div className="flex gap-4">
         <button onClick={handleLogout} className="bg-red-500 text-white px-4 py-2 rounded">
           Logout
