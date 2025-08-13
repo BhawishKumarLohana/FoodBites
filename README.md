@@ -39,9 +39,9 @@ Below are a few images showcasing the core features and UI of FoodBites:
 
 ![Donation Form](./screenshots/map.png)  
 
-![Interactive Map View](./screenshots/claimant.png)  
+![Interactive Map View](./screenshots/claimant.jpg)  
 
-![ Map View](./screenshots/NewFeatures.png)  
+![ Map View](./screenshots/NewFeatures.jpg)  
 
 
 ## Challenges We Faced
