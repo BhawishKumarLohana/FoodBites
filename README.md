@@ -35,13 +35,13 @@ Geospatial queries allow NGOs and donors to connect based on proximity, enabling
 
 Below are a few images showcasing the core features and UI of FoodBites:
 
-![Homepage – Browse Donations](./screenshots/1.png)  
+![Homepage – Browse Donations](./screenshots/Hero.png)  
 
-![Donation Form](./screenshots/2.png)  
+![Donation Form](./screenshots/map.png)  
 
 ![Interactive Map View](./screenshots/3.png)  
 
-![ Map View](./screenshots/4.jpg)  
+![ Map View](./screenshots/NewFeatures.jpg)  
 
 
 ## Challenges We Faced
