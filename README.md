@@ -69,14 +69,6 @@ Collaborate under high pressure with limited time
 Build a user-friendly, scalable web app with real-time functionality  
 
 
-## Judge Feedback Highlights
-
-> “FoodBites is globally relevant and addresses a tangible problem. The user interface is clean and the system architecture demonstrates sound technical understanding.”
-
-> “Real-time matching, expiry tracking, and user trust metrics would further improve the platform.”
-
-> “Great idea. Consider adding a feature to redirect suitable food to stray animals.”
-
 
 ## Getting Started
 
